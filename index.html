@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Product Scanner</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <!-- Manual search bar -->
+        <div class="search-container">
+            <input type="text" id="manualSearchInput" placeholder="Enter barcode number manually">
+            <button id="manualSearchBtn">🔍 Search</button>
+        </div>
+
+        <!-- Scanner card with button inside -->
+        <div class="scanner-container">
+            <div id="reader" style="width: 100%;"></div>
+            <button id="startScannerBtn">📷 Start Scanner</button>
+        </div>
+
+        <!-- Product display area -->
+        <div id="productInfo" class="product-card hidden">
+            <div class="product-header">
+                <h2 id="productName"></h2>
+                <div class="dropdown">
+                    <button class="dropdown-btn">⋮</button>
+                    <div class="dropdown-content">
+                        <a href="#" id="editProduct">✏️ Edit</a>
+                        <a href="#" id="deleteProduct">🗑️ Delete</a>
+                    </div>
+                </div>
+            </div>
+            <p id="productPrice"></p>
+        </div>
+
+        <!-- Not found / add product area -->
+        <div id="notFound" class="not-found hidden">
+            <p>❌ Product not found. Add it now?</p>
+            <button id="addProductBtn">➕ Add Product</button>
+        </div>
+    </div>
+
+    <!-- Modal for adding/editing product -->
+    <div id="productModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modalTitle">Add Product</h3>
+            <form id="productForm">
+                <input type="hidden" id="barcodeCode">
+                <label for="productNameInput">Product Name</label>
+                <input type="text" id="productNameInput" placeholder="e.g., Wireless Mouse" required>
+                <label for="productPriceInput">Price (₱)</label>
+                <input type="number" step="0.01" id="productPriceInput" placeholder="₱0.00" required>
+                <button type="submit">💾 Save</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
