@@ -7,17 +7,20 @@ const startScannerBtn = document.getElementById('startScannerBtn');
 const productInfoDiv = document.getElementById('productInfo');
 const notFoundDiv = document.getElementById('notFound');
 const productNameSpan = document.getElementById('productName');
-const productPriceSpan = document.getElementById('productPrice');
+const productSalePriceSpan = document.getElementById('productSalePrice');
+const productCostPriceSpan = document.getElementById('productCostPrice');
 const addProductBtn = document.getElementById('addProductBtn');
 const modal = document.getElementById('productModal');
 const modalTitle = document.getElementById('modalTitle');
 const productForm = document.getElementById('productForm');
 const barcodeCodeInput = document.getElementById('barcodeCode');
 const productNameInput = document.getElementById('productNameInput');
+const productCostInput = document.getElementById('productCostInput');
 const productPriceInput = document.getElementById('productPriceInput');
 const closeModal = document.querySelector('.close');
 const editProductLink = document.getElementById('editProduct');
 const deleteProductLink = document.getElementById('deleteProduct');
+const toggleCostBtn = document.getElementById('toggleCostBtn');
 
 // Manual search elements
 const manualSearchInput = document.getElementById('manualSearchInput');
@@ -27,6 +30,26 @@ const manualSearchBtn = document.getElementById('manualSearchBtn');
 let currentProduct = null;
 let html5QrCode = null;
 let isScanning = false;
+let showCostPrice = false;   // Toggle state: false = show asterisks, true = show actual cost
+
+// ===== TOGGLE COST PRICE VISIBILITY =====
+toggleCostBtn.addEventListener('click', () => {
+    showCostPrice = !showCostPrice;
+    toggleCostBtn.textContent = showCostPrice ? '👁️‍🗨️' : '👁️';
+    if (currentProduct) {
+        updateCostPriceDisplay(currentProduct.cprice);
+    }
+});
+
+function updateCostPriceDisplay(cost) {
+    if (!cost || cost === '') {
+        productCostPriceSpan.textContent = '';
+        return;
+    }
+    const costNum = parseFloat(cost);
+    const formattedCost = isNaN(costNum) ? cost : `₱${costNum.toFixed(2)}`;
+    productCostPriceSpan.textContent = showCostPrice ? formattedCost : '***';
+}
 
 // ===== SCANNER =====
 startScannerBtn.addEventListener('click', async () => {
@@ -90,8 +113,14 @@ async function handleBarcode(code) {
 // ===== DISPLAY PRODUCT =====
 function displayProduct(product) {
     productNameSpan.textContent = product.name;
-    const priceNum = parseFloat(product.price);
-    productPriceSpan.textContent = isNaN(priceNum) ? product.price : `₱${priceNum.toFixed(2)}`;
+    
+    // Sale price (always visible)
+    const saleNum = parseFloat(product.price);
+    productSalePriceSpan.textContent = isNaN(saleNum) ? product.price : `₱${saleNum.toFixed(2)}`;
+    
+    // Cost price (toggleable)
+    updateCostPriceDisplay(product.cprice);
+    
     productInfoDiv.classList.remove('hidden');
     notFoundDiv.classList.add('hidden');
 }
@@ -101,6 +130,10 @@ function showNotFound(code) {
     notFoundDiv.classList.remove('hidden');
     productInfoDiv.classList.add('hidden');
     barcodeCodeInput.value = code;
+    // Reset modal fields for new product
+    productNameInput.value = '';
+    productCostInput.value = '';
+    productPriceInput.value = '';
 }
 
 // ===== DROPDOWN MENU =====
@@ -126,6 +159,7 @@ editProductLink.addEventListener('click', (e) => {
     modalTitle.textContent = 'Edit Product';
     barcodeCodeInput.value = currentProduct.code;
     productNameInput.value = currentProduct.name;
+    productCostInput.value = currentProduct.cprice || '';
     productPriceInput.value = currentProduct.price;
     modal.classList.remove('hidden');
     dropdownContent.classList.remove('show');
@@ -160,6 +194,7 @@ deleteProductLink.addEventListener('click', async (e) => {
 addProductBtn.addEventListener('click', () => {
     modalTitle.textContent = 'Add Product';
     productNameInput.value = '';
+    productCostInput.value = '';
     productPriceInput.value = '';
     modal.classList.remove('hidden');
 });
@@ -170,14 +205,15 @@ productForm.addEventListener('submit', async (e) => {
     
     const code = barcodeCodeInput.value.trim();
     const name = productNameInput.value.trim();
+    const cprice = productCostInput.value.trim();
     const price = productPriceInput.value.trim();
     
-    if (!code || !name || !price) {
-        alert('Please fill all fields');
+    if (!code || !name || !cprice || !price) {
+        alert('Please fill all fields (Code, Name, Cost Price, Sale Price)');
         return;
     }
     
-    const productData = { code, name, price };
+    const productData = { code, name, cprice, price };
     
     try {
         if (modalTitle.textContent === 'Add Product') {
@@ -232,7 +268,7 @@ manualSearchBtn.addEventListener('click', () => {
     const barcode = manualSearchInput.value.trim();
     if (barcode) {
         handleBarcode(barcode);
-        manualSearchInput.value = ''; // optional
+        manualSearchInput.value = '';
     } else {
         alert('Please enter a barcode number');
     }
