@@ -16,7 +16,7 @@
             <button id="toggleCostBtn" class="toggle-cost-btn">👁️</button>
         </div>
 
-        <!-- Scanner card -->
+        <!-- Main scanner card -->
         <div class="scanner-container">
             <div id="reader" style="width: 100%;"></div>
             <button id="startScannerBtn">📷 Start Scanner</button>
@@ -53,13 +53,28 @@
             <form id="productForm">
                 <input type="hidden" id="barcodeCode">
                 <label for="productNameInput">Product Name</label>
-                <input type="text" id="productNameInput" placeholder="e.g., Wireless Mouse" required>
+                <input type="text" id="productNameInput" placeholder="e.g., Cola (Regular)" required>
                 <label for="productCostInput">Cost Price (₱)</label>
                 <input type="number" step="0.01" id="productCostInput" placeholder="₱0.00" required>
                 <label for="productPriceInput">Sale Price (₱)</label>
                 <input type="number" step="0.01" id="productPriceInput" placeholder="₱0.00" required>
+                <label for="productAliasesInput">Additional Barcodes (comma separated)</label>
+                <div class="alias-input-group">
+                    <input type="text" id="productAliasesInput" placeholder="e.g., 789012,345678,999000">
+                    <button type="button" id="scanAliasBtn" class="scan-alias-btn">📷 Scan</button>
+                </div>
                 <button type="submit">💾 Save</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Hidden scanner overlay for aliases -->
+    <div id="aliasScannerOverlay" class="modal hidden">
+        <div class="modal-content scanner-modal">
+            <span class="close-alias-scanner">&times;</span>
+            <h3>Scan Additional Barcode</h3>
+            <div id="aliasReader" style="width: 100%;"></div>
+            <button id="stopAliasScannerBtn" class="secondary-btn">Stop Scanning</button>
         </div>
     </div>
 
