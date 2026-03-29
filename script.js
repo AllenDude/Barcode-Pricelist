@@ -2,7 +2,6 @@
 const SHEETDB_URL = 'https://sheetdb.io/api/v1/4bng8q1evxy7l';
 
 // ===== DOM ELEMENTS =====
-const readerDiv = document.getElementById('reader');
 const startScannerBtn = document.getElementById('startScannerBtn');
 const productInfoDiv = document.getElementById('productInfo');
 const notFoundDiv = document.getElementById('notFound');
@@ -17,20 +16,28 @@ const barcodeCodeInput = document.getElementById('barcodeCode');
 const productNameInput = document.getElementById('productNameInput');
 const productCostInput = document.getElementById('productCostInput');
 const productPriceInput = document.getElementById('productPriceInput');
+const productAliasesInput = document.getElementById('productAliasesInput');
 const closeModal = document.querySelector('.close');
 const editProductLink = document.getElementById('editProduct');
 const deleteProductLink = document.getElementById('deleteProduct');
 const toggleCostBtn = document.getElementById('toggleCostBtn');
-
-// Manual search elements
 const manualSearchInput = document.getElementById('manualSearchInput');
 const manualSearchBtn = document.getElementById('manualSearchBtn');
+
+// Alias scanner elements
+const scanAliasBtn = document.getElementById('scanAliasBtn');
+const aliasScannerOverlay = document.getElementById('aliasScannerOverlay');
+const closeAliasScanner = document.querySelector('.close-alias-scanner');
+const stopAliasScannerBtn = document.getElementById('stopAliasScannerBtn');
+const aliasReaderDiv = document.getElementById('aliasReader');
 
 // ===== GLOBALS =====
 let currentProduct = null;
 let html5QrCode = null;
 let isScanning = false;
-let showCostPrice = false;   // Toggle state: false = show asterisks, true = show actual cost
+let showCostPrice = false;
+let aliasHtml5QrCode = null;
+let isAliasScanning = false;
 
 // ===== TOGGLE COST PRICE VISIBILITY =====
 toggleCostBtn.addEventListener('click', () => {
@@ -51,7 +58,7 @@ function updateCostPriceDisplay(cost) {
     productCostPriceSpan.textContent = showCostPrice ? formattedCost : '***';
 }
 
-// ===== SCANNER =====
+// ===== MAIN SCANNER =====
 startScannerBtn.addEventListener('click', async () => {
     if (isScanning) return;
     try {
@@ -70,9 +77,7 @@ startScannerBtn.addEventListener('click', async () => {
                     handleBarcode(decodedText);
                 }
             },
-            (error) => {
-                // Ignore scanning errors
-            }
+            (error) => { /* ignore */ }
         );
         isScanning = true;
         startScannerBtn.textContent = '🔍 Scanning...';
@@ -81,6 +86,29 @@ startScannerBtn.addEventListener('click', async () => {
         alert("Could not access camera. Please ensure you're on HTTPS and granted permission.");
     }
 });
+
+// ===== SEARCH LOGIC (supports aliases) =====
+async function findProductByCode(scannedCode) {
+    // First try exact match on the main 'code' field
+    const exactResponse = await fetch(`${SHEETDB_URL}/search?code=${encodeURIComponent(scannedCode)}`);
+    const exactData = await exactResponse.json();
+    if (exactData && exactData.length > 0) {
+        return exactData[0];
+    }
+    
+    // If not found, fetch all products and search inside aliases
+    const allResponse = await fetch(SHEETDB_URL);
+    const allProducts = await allResponse.json();
+    for (let product of allProducts) {
+        if (product.aliases) {
+            const aliasesList = product.aliases.split(',').map(a => a.trim());
+            if (aliasesList.includes(scannedCode)) {
+                return product;
+            }
+        }
+    }
+    return null;
+}
 
 // ===== BARCODE HANDLER =====
 async function handleBarcode(code) {
@@ -95,11 +123,9 @@ async function handleBarcode(code) {
     currentProduct = null;
 
     try {
-        const response = await fetch(`${SHEETDB_URL}/search?code=${encodeURIComponent(code)}`);
-        const data = await response.json();
-        
-        if (data && data.length > 0) {
-            currentProduct = data[0];
+        const product = await findProductByCode(code);
+        if (product) {
+            currentProduct = product;
             displayProduct(currentProduct);
         } else {
             showNotFound(code);
@@ -113,14 +139,9 @@ async function handleBarcode(code) {
 // ===== DISPLAY PRODUCT =====
 function displayProduct(product) {
     productNameSpan.textContent = product.name;
-    
-    // Sale price (always visible)
     const saleNum = parseFloat(product.price);
     productSalePriceSpan.textContent = isNaN(saleNum) ? product.price : `₱${saleNum.toFixed(2)}`;
-    
-    // Cost price (toggleable)
     updateCostPriceDisplay(product.cprice);
-    
     productInfoDiv.classList.remove('hidden');
     notFoundDiv.classList.add('hidden');
 }
@@ -134,6 +155,7 @@ function showNotFound(code) {
     productNameInput.value = '';
     productCostInput.value = '';
     productPriceInput.value = '';
+    productAliasesInput.value = '';
 }
 
 // ===== DROPDOWN MENU =====
@@ -161,6 +183,7 @@ editProductLink.addEventListener('click', (e) => {
     productNameInput.value = currentProduct.name;
     productCostInput.value = currentProduct.cprice || '';
     productPriceInput.value = currentProduct.price;
+    productAliasesInput.value = currentProduct.aliases || '';
     modal.classList.remove('hidden');
     dropdownContent.classList.remove('show');
 });
@@ -196,6 +219,7 @@ addProductBtn.addEventListener('click', () => {
     productNameInput.value = '';
     productCostInput.value = '';
     productPriceInput.value = '';
+    productAliasesInput.value = '';
     modal.classList.remove('hidden');
 });
 
@@ -207,13 +231,17 @@ productForm.addEventListener('submit', async (e) => {
     const name = productNameInput.value.trim();
     const cprice = productCostInput.value.trim();
     const price = productPriceInput.value.trim();
+    const aliases = productAliasesInput.value.trim();
     
     if (!code || !name || !cprice || !price) {
-        alert('Please fill all fields (Code, Name, Cost Price, Sale Price)');
+        alert('Please fill all required fields (Code, Name, Cost Price, Sale Price)');
         return;
     }
     
     const productData = { code, name, cprice, price };
+    if (aliases) {
+        productData.aliases = aliases;
+    }
     
     try {
         if (modalTitle.textContent === 'Add Product') {
@@ -280,9 +308,78 @@ manualSearchInput.addEventListener('keypress', (e) => {
     }
 });
 
+// ===== ALIAS SCANNER FUNCTIONS =====
+async function startAliasScanner() {
+    if (isAliasScanning) return;
+    try {
+        if (!aliasHtml5QrCode) {
+            aliasHtml5QrCode = new Html5Qrcode("aliasReader");
+        }
+        await aliasHtml5QrCode.start(
+            { facingMode: "environment" },
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            },
+            async (decodedText) => {
+                if (isAliasScanning) {
+                    // Append the scanned barcode to the aliases input
+                    let currentValue = productAliasesInput.value.trim();
+                    if (currentValue === "") {
+                        productAliasesInput.value = decodedText;
+                    } else {
+                        productAliasesInput.value = currentValue + "," + decodedText;
+                    }
+                    // Stop scanner and close overlay automatically after a successful scan
+                    await stopAliasScanner();
+                    aliasScannerOverlay.classList.add('hidden');
+                }
+            },
+            (error) => { /* ignore */ }
+        );
+        isAliasScanning = true;
+    } catch (err) {
+        console.error("Alias scanner error:", err);
+        alert("Could not access camera for alias scanning.");
+    }
+}
+
+async function stopAliasScanner() {
+    if (aliasHtml5QrCode && isAliasScanning) {
+        await aliasHtml5QrCode.stop();
+        isAliasScanning = false;
+    }
+}
+
+// Open alias scanner overlay
+scanAliasBtn.addEventListener('click', () => {
+    aliasScannerOverlay.classList.remove('hidden');
+    startAliasScanner();
+});
+
+// Close alias scanner overlay (manual close)
+closeAliasScanner.addEventListener('click', async () => {
+    await stopAliasScanner();
+    aliasScannerOverlay.classList.add('hidden');
+});
+
+stopAliasScannerBtn.addEventListener('click', async () => {
+    await stopAliasScanner();
+    aliasScannerOverlay.classList.add('hidden');
+});
+
+// Also close if clicking outside the modal content
+window.addEventListener('click', async (e) => {
+    if (e.target === aliasScannerOverlay) {
+        await stopAliasScanner();
+        aliasScannerOverlay.classList.add('hidden');
+    }
+});
+
 // ===== SERVICE WORKER REGISTRATION (optional) =====
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('Service Worker registered', reg))
         .catch(err => console.error('SW registration failed', err));
-}
+    }
