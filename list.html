@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>All Products</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .back-btn, .toggle-cost-list-btn {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .toggle-cost-list-btn {
+            background: #6c757d;
+        }
+        .back-btn:hover {
+            background: #0056b3;
+        }
+        .toggle-cost-list-btn:hover {
+            background: #5a6268;
+        }
+        .product-list {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .product-item {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .product-item:last-child {
+            border-bottom: none;
+        }
+        .product-info {
+            flex: 1;
+        }
+        .product-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+        .product-prices {
+            display: flex;
+            gap: 12px;
+            font-size: 0.9rem;
+        }
+        .sale-price {
+            color: #007aff;
+            font-weight: 700;
+        }
+        .cost-price {
+            color: #6c757d;
+        }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0 8px;
+            color: #333;
+            line-height: 1;
+        }
+        .dropdown-btn:hover {
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 120px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            z-index: 1;
+            overflow: hidden;
+        }
+        .dropdown-content a {
+            color: #333;
+            padding: 10px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .dropdown-content a:hover {
+            background-color: #f5f5f5;
+        }
+        .show {
+            display: block;
+        }
+        .loading, .error {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            color: #dc3545;
+        }
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-content h3 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .modal-content input:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+        .modal-content button {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .modal-content button:hover {
+            background: #0056b3;
+        }
+        .close-modal {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+        .close-modal:hover {
+            color: #333;
+        }
+        .hidden {
+            display: none;
+        }
+        .alias-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .scan-alias-btn {
+            width: auto;
+            background: #28a745;
+            padding: 10px 16px;
+            margin: 0;
+        }
+        .scan-alias-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            All Products
+            <div class="header-buttons">
+                <button id="toggleCostListBtn" class="toggle-cost-list-btn">👁️ Show Cost</button>
+                <button id="closePageBtn" class="back-btn">← Back to Scanner</button>
+            </div>
+        </h1>
+        <div id="productList" class="product-list">
+            <div class="loading">Loading products...</div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Edit Product</h3>
+            <form id="editForm">
+                <input type="hidden" id="editCode">
+                <label for="editName">Product Name</label>
+                <input type="text" id="editName" required>
+                <label for="editCost">Cost Price (₱)</label>
+                <input type="number" step="0.01" id="editCost" required>
+                <label for="editPrice">Sale Price (₱)</label>
+                <input type="number" step="0.01" id="editPrice" required>
+                <label for="editAliases">Additional Barcodes (comma separated)</label>
+                <div class="alias-input-group">
+                    <input type="text" id="editAliases" placeholder="e.g., 789012,345678">
+                    <button type="button" id="scanEditAliasBtn" class="scan-alias-btn">📷 Scan</button>
+                </div>
+                <button type="submit">💾 Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Alias scanner overlay (for edit modal) -->
+    <div id="editAliasScannerOverlay" class="modal hidden">
+        <div class="modal-content scanner-modal">
+            <span class="close-edit-scanner">&times;</span>
+            <h3>Scan Additional Barcode</h3>
+            <div id="editAliasReader" style="width: 100%;"></div>
+            <button id="stopEditAliasScannerBtn" class="secondary-btn" style="background:#6c757d; margin-top:12px;">Stop Scanning</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        const SHEETDB_URL = 'https://sheetdb.io/api/v1/4bng8q1evxy7l';
+        let showCost = false;  // default: hidden (show ***)
+        let productsData = [];
+
+        const productListDiv = document.getElementById('productList');
+        const toggleCostListBtn = document.getElementById('toggleCostListBtn');
+        const closePageBtn = document.getElementById('closePageBtn');
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
+        const editCode = document.getElementById('editCode');
+        const editName = document.getElementById('editName');
+        const editCost = document.getElementById('editCost');
+        const editPrice = document.getElementById('editPrice');
+        const editAliases = document.getElementById('editAliases');
+        const closeModalSpan = document.querySelector('#editModal .close-modal');
+        
+        const scanEditAliasBtn = document.getElementById('scanEditAliasBtn');
+        const editAliasScannerOverlay = document.getElementById('editAliasScannerOverlay');
+        const closeEditScanner = document.querySelector('#editAliasScannerOverlay .close-edit-scanner');
+        const stopEditAliasScannerBtn = document.getElementById('stopEditAliasScannerBtn');
+        let editAliasHtml5QrCode = null;
+        let isEditAliasScanning = false;
+
+        async function fetchAndDisplayProducts() {
+            try {
+                const response = await fetch(SHEETDB_URL);
+                if (!response.ok) throw new Error('Failed to fetch');
+                let products = await response.json();
+                products.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                productsData = products;
+                renderProductList();
+            } catch (err) {
+                console.error(err);
+                productListDiv.innerHTML = '<div class="error">Error loading products. Please check your connection.</div>';
+            }
+        }
+
+        function renderProductList() {
+            if (productsData.length === 0) {
+                productListDiv.innerHTML = '<div class="loading">No products found.</div>';
+                return;
+            }
+            let html = '';
+            for (let p of productsData) {
+                const salePrice = parseFloat(p.price);
+                const saleDisplay = isNaN(salePrice) ? p.price : `₱${salePrice.toFixed(2)}`;
+                
+                let costDisplay = '';
+                if (p.cprice && p.cprice !== '') {
+                    const costNum = parseFloat(p.cprice);
+                    const actualCost = isNaN(costNum) ? p.cprice : `₱${costNum.toFixed(2)}`;
+                    costDisplay = showCost ? actualCost : '***';
+                }
+                
+                html += `
+                    <div class="product-item" data-code="${escapeHtml(p.code)}">
+                        <div class="product-info">
+                            <div class="product-name">${escapeHtml(p.name)}</div>
+                            <div class="product-prices">
+                                <span class="sale-price">${saleDisplay}</span>
+                                ${costDisplay ? `<span class="cost-price">Cost: ${costDisplay}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="dropdown-btn" data-code="${escapeHtml(p.code)}">⋮</button>
+                            <div class="dropdown-content" data-code="${escapeHtml(p.code)}">
+                                <a class="edit-product" data-code="${escapeHtml(p.code)}">✏️ Edit</a>
+                                <a class="delete-product" data-code="${escapeHtml(p.code)}">🗑️ Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            productListDiv.innerHTML = html;
+            
+            document.querySelectorAll('.dropdown-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const code = btn.getAttribute('data-code');
+                    const dropdown = document.querySelector(`.dropdown-content[data-code="${code}"]`);
+                    document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+                    dropdown.classList.toggle('show');
+                });
+            });
+            document.querySelectorAll('.edit-product').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const code = link.getAttribute('data-code');
+                    openEditModal(code);
+                });
+            });
+            document.querySelectorAll('.delete-product').forEach(link => {
+                link.addEventListener('click', async (e) => {
+                    const code = link.getAttribute('data-code');
+                    if (confirm('Delete this product permanently?')) {
+                        await deleteProduct(code);
+                    }
+                });
+            });
+            window.addEventListener('click', () => {
+                document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+            });
+        }
+
+        async function deleteProduct(code) {
+            try {
+                const response = await fetch(`${SHEETDB_URL}/code/${encodeURIComponent(code)}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Product deleted');
+                    await fetchAndDisplayProducts();
+                } else {
+                    throw new Error('Delete failed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Delete failed');
+            }
+        }
+
+        function openEditModal(code) {
+            const product = productsData.find(p => p.code === code);
+            if (!product) return;
+            editCode.value = product.code;
+            editName.value = product.name;
+            editCost.value = product.cprice || '';
+            editPrice.value = product.price;
+            editAliases.value = product.aliases || '';
+            editModal.classList.remove('hidden');
+        }
+
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = editCode.value;
+            const name = editName.value.trim();
+            const cprice = editCost.value.trim();
+            const price = editPrice.value.trim();
+            const aliases = editAliases.value.trim();
+            if (!name || !cprice || !price) {
+                alert('Please fill all required fields');
+                return;
+            }
+            const productData = { code, name, cprice, price };
+            if (aliases) productData.aliases = aliases;
+            try {
+                const response = await fetch(`${SHEETDB_URL}/code/${encodeURIComponent(code)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(productData)
+                });
+                if (response.ok) {
+                    alert('Product updated');
+                    editModal.classList.add('hidden');
+                    await fetchAndDisplayProducts();
+                } else {
+                    throw new Error('Update failed');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Update failed');
+            }
+        });
+
+        closeModalSpan.addEventListener('click', () => editModal.classList.add('hidden'));
+        window.addEventListener('click', (e) => {
+            if (e.target === editModal) editModal.classList.add('hidden');
+        });
+
+        // Toggle cost visibility (default hidden)
+        toggleCostListBtn.addEventListener('click', () => {
+            showCost = !showCost;
+            toggleCostListBtn.textContent = showCost ? '👁️ Hide Cost' : '👁️‍🗨️ Show Cost';
+            renderProductList();
+        });
+
+        // Close page - go back to scanner
+        closePageBtn.addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+
+        // ----- Alias scanner for edit modal -----
+        async function startEditAliasScanner() {
+            if (isEditAliasScanning) return;
+            try {
+                if (!editAliasHtml5QrCode) {
+                    editAliasHtml5QrCode = new Html5Qrcode("editAliasReader");
+                }
+                await editAliasHtml5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+                    async (decodedText) => {
+                        if (isEditAliasScanning) {
+                            let currentVal = editAliases.value.trim();
+                            if (currentVal === "") editAliases.value = decodedText;
+                            else editAliases.value = currentVal + "," + decodedText;
+                            await stopEditAliasScanner();
+                            editAliasScannerOverlay.classList.add('hidden');
+                        }
+                    },
+                    (error) => {}
+                );
+                isEditAliasScanning = true;
+            } catch (err) {
+                console.error("Alias scanner error:", err);
+                alert("Could not access camera for alias scanning.");
+            }
+        }
+
+        async function stopEditAliasScanner() {
+            if (editAliasHtml5QrCode && isEditAliasScanning) {
+                await editAliasHtml5QrCode.stop();
+                isEditAliasScanning = false;
+            }
+        }
+
+        scanEditAliasBtn.addEventListener('click', () => {
+            editAliasScannerOverlay.classList.remove('hidden');
+            startEditAliasScanner();
+        });
+        closeEditScanner.addEventListener('click', async () => {
+            await stopEditAliasScanner();
+            editAliasScannerOverlay.classList.add('hidden');
+        });
+        stopEditAliasScannerBtn.addEventListener('click', async () => {
+            await stopEditAliasScanner();
+            editAliasScannerOverlay.classList.add('hidden');
+        });
+        window.addEventListener('click', async (e) => {
+            if (e.target === editAliasScannerOverlay) {
+                await stopEditAliasScanner();
+                editAliasScannerOverlay.classList.add('hidden');
+            }
+        });
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        fetchAndDisplayProducts();
+    </script>
+</body>
+</html>
