@@ -23,6 +23,7 @@ const deleteProductLink = document.getElementById('deleteProduct');
 const toggleCostBtn = document.getElementById('toggleCostBtn');
 const manualSearchInput = document.getElementById('manualSearchInput');
 const manualSearchBtn = document.getElementById('manualSearchBtn');
+const viewAllBtn = document.getElementById('viewAllBtn');
 
 // Alias scanner elements
 const scanAliasBtn = document.getElementById('scanAliasBtn');
@@ -308,6 +309,11 @@ manualSearchInput.addEventListener('keypress', (e) => {
     }
 });
 
+// ===== VIEW ALL PRODUCTS BUTTON =====
+viewAllBtn.addEventListener('click', () => {
+    window.open('list.html', '_blank');
+});
+
 // ===== ALIAS SCANNER FUNCTIONS =====
 async function startAliasScanner() {
     if (isAliasScanning) return;
@@ -382,4 +388,4 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('Service Worker registered', reg))
         .catch(err => console.error('SW registration failed', err));
-    }
+}
