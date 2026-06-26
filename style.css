@@ -1,305 +1,1197 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/*==================================================
+  INVENTORY SCANNER UI 3.0
+  FOUNDATION
+==================================================*/
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root{
+
+    /* Brand */
+
+    --primary:#4F46E5;
+    --primary-light:#6366F1;
+    --primary-dark:#3730A3;
+
+    /* Background */
+
+    --bg:#F8FAFC;
+    --surface:#FFFFFF;
+    --surface-hover:#F1F5F9;
+
+    /* Text */
+
+    --text:#0F172A;
+    --text-light:#64748B;
+
+    /* Status */
+
+    --success:#22C55E;
+    --warning:#F59E0B;
+    --danger:#EF4444;
+
+    /* Borders */
+
+    --border:#E2E8F0;
+
+    /* Radius */
+
+    --radius-sm:14px;
+    --radius:20px;
+    --radius-lg:28px;
+    --radius-pill:999px;
+
+    /* Shadows */
+
+    --shadow-xs:
+        0 2px 6px rgba(15,23,42,.05);
+
+    --shadow-sm:
+        0 8px 24px rgba(15,23,42,.06);
+
+    --shadow:
+        0 18px 40px rgba(15,23,42,.08);
+
+    --shadow-lg:
+        0 30px 70px rgba(15,23,42,.12);
+
+    --transition:.25s cubic-bezier(.4,0,.2,1);
+
 }
 
-body {
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    background: #f5f5f5;
-    padding: 20px;
+/*==================================================
+  RESET
+==================================================*/
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-.container {
-    max-width: 600px;
-    margin: 0 auto;
+html{
+
+    scroll-behavior:smooth;
+
 }
 
-.search-container {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    align-items: center;
-    flex-wrap: wrap;
+body{
+
+    font-family:"Plus Jakarta Sans",sans-serif;
+
+    color:var(--text);
+
+    background:
+        radial-gradient(circle at top,#EEF2FF 0%,#F8FAFC 38%,#FFFFFF 100%);
+
+    min-height:100vh;
+
+    padding:22px;
+
+    -webkit-font-smoothing:antialiased;
+
 }
 
-#manualSearchInput {
-    flex: 1;
-    min-width: 120px;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
+/*==================================================
+  SCROLLBAR
+==================================================*/
+
+::-webkit-scrollbar{
+
+    width:8px;
+
 }
 
-#manualSearchBtn, .toggle-cost-btn, .view-all-btn {
-    width: auto;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-    border: none;
-    white-space: nowrap;
+::-webkit-scrollbar-thumb{
+
+    background:#CBD5E1;
+
+    border-radius:999px;
+
 }
 
-#manualSearchBtn {
-    background: #28a745;
-    color: white;
+/*==================================================
+  LAYOUT
+==================================================*/
+
+.container{
+
+    width:100%;
+
+    max-width:680px;
+
+    margin:auto;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:20px;
+
 }
 
-#manualSearchBtn:hover {
-    background: #218838;
+/*==================================================
+  CARDS
+==================================================*/
+
+.scanner-container,
+.product-card,
+.not-found,
+.recent-scans{
+
+    background:rgba(255,255,255,.82);
+
+    backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.65);
+
+    border-radius:var(--radius-lg);
+
+    padding:22px;
+
+    box-shadow:var(--shadow);
+
+    transition:var(--transition);
+
 }
 
-.toggle-cost-btn {
-    background: #6c757d;
-    color: white;
-    font-size: 20px;
-    padding: 12px 16px;
+.scanner-container:hover,
+.product-card:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:var(--shadow-lg);
+
 }
 
-.toggle-cost-btn:hover {
-    background: #5a6268;
+/*==================================================
+  UTILITIES
+==================================================*/
+
+.hidden{
+
+    display:none!important;
+
 }
 
-.view-all-btn {
-    background: #17a2b8;
-    color: white;
+.center{
+
+    text-align:center;
+
 }
 
-.view-all-btn:hover {
-    background: #138496;
+.flex{
+
+    display:flex;
+
 }
 
-.scanner-container {
-    background: white;
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+.gap{
+
+    gap:12px;
+
 }
 
-#reader {
-    margin-bottom: 12px;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #000;
+/*==================================================
+  ANIMATIONS
+==================================================*/
+
+@keyframes fadeUp{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(18px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
 }
 
-button {
-    background: #007aff;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    width: 100%;
-    transition: background 0.2s;
+.product-card,
+.not-found,
+.recent-scans{
+
+    animation:fadeUp .35s ease;
+
 }
 
-button:hover {
-    background: #0056b3;
+/*==================================================
+  SEARCH SECTION
+==================================================*/
+
+.search-container{
+
+    display:grid;
+
+    grid-template-columns:1fr auto auto auto;
+
+    gap:12px;
+
+    align-items:center;
+
 }
 
-#startScannerBtn {
-    margin-top: 12px;
+.search-container input{
+
+    height:58px;
+
+    border:none;
+
+    outline:none;
+
+    padding:0 22px;
+
+    border-radius:var(--radius-pill);
+
+    background:rgba(255,255,255,.92);
+
+    font-size:15px;
+
+    font-weight:500;
+
+    color:var(--text);
+
+    box-shadow:var(--shadow-sm);
+
+    transition:var(--transition);
+
 }
 
-.product-card {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-    animation: fadeIn 0.3s ease;
+.search-container input::placeholder{
+
+    color:#94A3B8;
+
 }
 
-.product-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
+.search-container input:focus{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 0 0 4px rgba(79,70,229,.12),
+        var(--shadow);
+
 }
 
-#productName {
-    font-size: 1.5rem;
-    word-break: break-word;
+/*==================================================
+  FLOATING ICON BUTTONS
+==================================================*/
+
+.search-container button{
+
+    width:54px;
+
+    height:54px;
+
+    border:none;
+
+    cursor:pointer;
+
+    border-radius:18px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:22px;
+
+    transition:var(--transition);
+
+    box-shadow:var(--shadow-sm);
+
 }
 
-.sale-price {
-    font-size: 24px;
-    font-weight: 700;
-    color: #007aff;
-    margin-top: 8px;
+.search-container button:hover{
+
+    transform:translateY(-3px);
+
 }
 
-.cost-price {
-    font-size: 18px;
-    color: #6c757d;
-    margin-top: 4px;
-    font-weight: 500;
+.search-container button:active{
+
+    transform:scale(.94);
+
 }
 
-.dropdown {
-    position: relative;
-    display: inline-block;
+/* Search */
+
+#manualSearchBtn{
+
+    background:linear-gradient(
+        135deg,
+        var(--primary),
+        var(--primary-light)
+    );
+
+    color:white;
+
 }
 
-.dropdown-btn {
-    background: none;
-    border: none;
-    font-size: 28px;
-    cursor: pointer;
-    width: auto;
-    padding: 0 8px;
-    color: #333;
-    line-height: 1;
+/* Eye */
+
+#toggleCostBtn{
+
+    background:#0F172A;
+
+    color:white;
+
 }
 
-.dropdown-btn:hover {
-    background: #f0f0f0;
-    border-radius: 8px;
+/* Products */
+
+#viewAllBtn{
+
+    background:white;
+
+    color:var(--text);
+
 }
 
-.dropdown-content {
-    display: none;
-    position: absolute;
-    right: 0;
-    background-color: white;
-    min-width: 140px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    border-radius: 8px;
-    z-index: 1;
-    overflow: hidden;
+/*==================================================
+  SCANNER CARD
+==================================================*/
+
+.scanner-container{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:22px;
+
 }
 
-.dropdown-content a {
-    color: #333;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
-    font-size: 14px;
-    transition: background 0.2s;
+#reader{
+
+    width:100%;
+
+    min-height:300px;
+
+    overflow:hidden;
+
+    border-radius:24px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #EEF2FF,
+            #F8FAFC
+        );
+
+    border:2px dashed #C7D2FE;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
 }
 
-.dropdown-content a:hover {
-    background-color: #f5f5f5;
+/*==================================================
+  START SCANNER BUTTON
+==================================================*/
+
+#startScannerBtn{
+
+    border:none;
+
+    cursor:pointer;
+
+    width:100%;
+
+    height:62px;
+
+    border-radius:20px;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            var(--primary),
+            #6D5DF6
+        );
+
+    color:white;
+
+    font-size:17px;
+
+    font-weight:700;
+
+    letter-spacing:.3px;
+
+    transition:var(--transition);
+
+    box-shadow:
+
+        0 18px 35px rgba(79,70,229,.28);
+
 }
 
-.show {
-    display: block;
+#startScannerBtn:hover{
+
+    transform:translateY(-4px);
+
 }
 
-.not-found {
-    background: #fff3e0;
-    border-left: 4px solid #ff9800;
-    padding: 16px;
-    border-radius: 8px;
-    text-align: center;
-    margin-bottom: 20px;
+#startScannerBtn:active{
+
+    transform:scale(.98);
+
 }
 
-.not-found p {
-    margin-bottom: 12px;
-    font-weight: 500;
+/*==================================================
+  SCANNING STATE
+==================================================*/
+
+.scanning{
+
+    animation:scannerPulse 1.6s infinite;
+
 }
 
-/* Modal styles */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    animation: fadeIn 0.2s ease;
+@keyframes scannerPulse{
+
+    0%{
+
+        box-shadow:
+            0 0 0 0 rgba(79,70,229,.45);
+
+    }
+
+    70%{
+
+        box-shadow:
+            0 0 0 22px rgba(79,70,229,0);
+
+    }
+
+    100%{
+
+        box-shadow:
+            0 0 0 0 rgba(79,70,229,0);
+
+    }
+
 }
 
-.modal-content {
-    background: white;
-    padding: 24px;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+/*==================================================
+  PRODUCT CARD
+==================================================*/
+
+.product-card{
+
+    position:relative;
+
+    overflow:hidden;
+
 }
 
-.scanner-modal {
-    max-width: 500px;
+.product-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+    left:0;
+
+    width:100%;
+    height:6px;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--primary),
+            #8B5CF6
+        );
+
 }
 
-.modal-content h3 {
-    margin-bottom: 20px;
-    font-size: 1.5rem;
+.product-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-start;
+
+    margin-bottom:18px;
+
 }
 
-.modal-content input {
-    width: 100%;
-    padding: 12px;
-    margin: 8px 0 16px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
-    transition: border 0.2s;
+#productName{
+
+    font-size:1.75rem;
+
+    font-weight:800;
+
+    line-height:1.2;
+
+    letter-spacing:-.5px;
+
+    color:var(--text);
+
 }
 
-.modal-content input:focus {
-    outline: none;
-    border-color: #007aff;
+/*===============================================
+  BARCODE CHIP
+===============================================*/
+
+#productBarcode{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    margin-bottom:18px;
+
+    padding:10px 18px;
+
+    border-radius:999px;
+
+    background:#EEF2FF;
+
+    color:var(--primary-dark);
+
+    font-weight:700;
+
+    font-size:.88rem;
+
 }
 
-.close, .close-alias-scanner {
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    color: #aaa;
-    transition: color 0.2s;
+/*===============================================
+  SALE PRICE
+===============================================*/
+
+.sale-price{
+
+    margin-top:6px;
+
+    font-size:2.25rem;
+
+    font-weight:800;
+
+    color:var(--primary);
+
+    letter-spacing:-1px;
+
 }
 
-.close:hover, .close-alias-scanner:hover {
-    color: #333;
+/*===============================================
+  COST PRICE
+===============================================*/
+
+.cost-price{
+
+    margin-top:8px;
+
+    font-size:1rem;
+
+    font-weight:600;
+
+    color:var(--text-light);
+
 }
 
-.secondary-btn {
-    background: #6c757d;
-    margin-top: 12px;
+/*===============================================
+  COPY BUTTON
+===============================================*/
+
+#copyBarcodeBtn{
+
+    margin-top:22px;
+
+    width:100%;
+
+    height:54px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:#EEF2FF;
+
+    color:var(--primary-dark);
+
+    font-size:15px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
 }
 
-.secondary-btn:hover {
-    background: #5a6268;
+#copyBarcodeBtn:hover{
+
+    background:#DBEAFE;
+
+    transform:translateY(-2px);
+
 }
 
-.alias-input-group {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+/*==================================================
+  DROPDOWN
+==================================================*/
+
+.dropdown{
+
+    position:relative;
+
 }
 
-.scan-alias-btn {
-    width: auto;
-    background: #28a745;
-    padding: 12px 16px;
-    margin: 0;
+.dropdown-btn{
+
+    width:46px;
+
+    height:46px;
+
+    border:none;
+
+    border-radius:16px;
+
+    background:#F8FAFC;
+
+    cursor:pointer;
+
+    font-size:22px;
+
+    transition:var(--transition);
+
 }
 
-.scan-alias-btn:hover {
-    background: #218838;
+.dropdown-btn:hover{
+
+    background:#EEF2FF;
+
 }
 
-.hidden {
-    display: none;
+.dropdown-content{
+
+    display:none;
+
+    position:absolute;
+
+    right:0;
+
+    top:56px;
+
+    width:180px;
+
+    overflow:hidden;
+
+    border-radius:20px;
+
+    background:white;
+
+    box-shadow:var(--shadow-lg);
+
+    animation:fadeUp .25s ease;
+
+    z-index:50;
+
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.dropdown-content.show{
+
+    display:block;
+
+}
+
+.dropdown-content a{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:16px 18px;
+
+    text-decoration:none;
+
+    color:var(--text);
+
+    font-weight:600;
+
+    transition:var(--transition);
+
+}
+
+.dropdown-content a:hover{
+
+    background:#F8FAFC;
+
+}
+
+.dropdown-content a:last-child{
+
+    color:var(--danger);
+
+}
+
+/*==================================================
+  NOT FOUND CARD
+==================================================*/
+
+.not-found{
+
+    text-align:center;
+
+}
+
+.not-found p{
+
+    font-size:1.1rem;
+
+    font-weight:700;
+
+    color:var(--text);
+
+    margin-bottom:18px;
+
+}
+
+#addProductBtn{
+
+    width:100%;
+
+    height:58px;
+
+    border:none;
+
+    border-radius:18px;
+
+    cursor:pointer;
+
+    background:
+
+        linear-gradient(
+            135deg,
+            var(--success),
+            #16A34A
+        );
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    transition:var(--transition);
+
+}
+
+#addProductBtn:hover{
+
+    transform:translateY(-3px);
+
+}
+
+/*==================================================
+  MODALS
+==================================================*/
+
+.modal{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(15,23,42,.45);
+
+    backdrop-filter:blur(10px);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:22px;
+
+    z-index:999;
+
+}
+
+.modal-content{
+
+    width:100%;
+
+    max-width:430px;
+
+    background:white;
+
+    border-radius:30px;
+
+    padding:28px;
+
+    box-shadow:var(--shadow-lg);
+
+    animation:fadeUp .28s ease;
+
+}
+
+.modal-content h3{
+
+    font-size:1.45rem;
+
+    font-weight:800;
+
+    margin-bottom:22px;
+
+}
+
+.modal-content label{
+
+    display:block;
+
+    margin:16px 0 8px;
+
+    font-size:.9rem;
+
+    font-weight:700;
+
+    color:var(--text);
+
+}
+
+.modal-content input{
+
+    width:100%;
+
+    height:54px;
+
+    border:2px solid var(--border);
+
+    border-radius:16px;
+
+    padding:0 18px;
+
+    font-size:15px;
+
+    transition:var(--transition);
+
+}
+
+.modal-content input:focus{
+
+    outline:none;
+
+    border-color:var(--primary);
+
+    box-shadow:0 0 0 4px rgba(79,70,229,.12);
+
+}
+
+.modal-content button[type="submit"]{
+
+    margin-top:24px;
+
+    width:100%;
+
+    height:56px;
+
+    border:none;
+
+    border-radius:18px;
+
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.modal-content button[type="submit"]:hover{
+
+    transform:translateY(-2px);
+
+}
+
+.close,
+.close-alias-scanner{
+
+    float:right;
+
+    width:40px;
+
+    height:40px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:50%;
+
+    cursor:pointer;
+
+    font-size:26px;
+
+    color:var(--text-light);
+
+    transition:var(--transition);
+
+}
+
+.close:hover,
+.close-alias-scanner:hover{
+
+    background:#F1F5F9;
+
+    color:var(--text);
+
+}
+
+/*==================================================
+  ALIAS INPUT
+==================================================*/
+
+.alias-input-group{
+
+    display:flex;
+
+    gap:10px;
+
+}
+
+.alias-input-group input{
+
+    flex:1;
+
+}
+
+.scan-alias-btn{
+
+    width:58px !important;
+
+    height:54px;
+
+    border:none;
+
+    border-radius:16px;
+
+    background:linear-gradient(135deg,var(--success),#16A34A);
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.scan-alias-btn:hover{
+
+    transform:translateY(-2px);
+
+}
+
+/*==================================================
+  RECENT SCANS
+==================================================*/
+
+.recent-scans h3{
+
+    margin-bottom:18px;
+
+    font-size:1.15rem;
+
+    font-weight:800;
+
+}
+
+#recentScansList{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.recent-item{
+
+    padding:16px;
+
+    border-radius:18px;
+
+    background:#F8FAFC;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.recent-item:hover{
+
+    background:#EEF2FF;
+
+    transform:translateX(4px);
+
+}
+
+.recent-item strong{
+
+    display:block;
+
+    margin-bottom:4px;
+
+}
+
+.recent-item small{
+
+    color:var(--text-light);
+
+}
+
+/*==================================================
+  SCANNER MODAL
+==================================================*/
+
+.scanner-modal{
+
+    max-width:500px;
+
+}
+
+.secondary-btn{
+
+    width:100%;
+
+    height:52px;
+
+    margin-top:18px;
+
+    border:none;
+
+    border-radius:16px;
+
+    background:#E2E8F0;
+
+    color:var(--text);
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.secondary-btn:hover{
+
+    background:#CBD5E1;
+
+}
+
+/*==================================================
+  MOBILE
+==================================================*/
+
+@media(max-width:640px){
+
+    body{
+
+        padding:16px;
+
+    }
+
+    .search-container{
+
+        grid-template-columns:1fr 52px 52px 52px;
+
+    }
+
+    .search-container button{
+
+        width:52px;
+
+        height:52px;
+
+    }
+
+    .scanner-container,
+    .product-card,
+    .not-found,
+    .recent-scans{
+
+        padding:18px;
+
+    }
+
+    #reader{
+
+        min-height:240px;
+
+    }
+
+    #productName{
+
+        font-size:1.45rem;
+
+    }
+
+    .sale-price{
+
+        font-size:1.9rem;
+
+    }
+
+}
+
+/*==================================================
+  MICRO ANIMATIONS
+==================================================*/
+
+button{
+
+    transition:all .2s ease;
+
+}
+
+button:active{
+
+    transform:scale(.97);
+
+}
+
+input{
+
+    transition:.2s ease;
+
+}
+
+::selection{
+
+    background:var(--primary);
+
+    color:white;
+
 }

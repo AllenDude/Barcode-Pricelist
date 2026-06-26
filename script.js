@@ -1,391 +1,746 @@
-// ===== CONFIGURATION =====
-const SHEETDB_URL = 'https://sheetdb.io/api/v1/4bng8q1evxy7l';
+/*==================================================
+    INVENTORY SCANNER
+==================================================*/
 
-// ===== DOM ELEMENTS =====
-const startScannerBtn = document.getElementById('startScannerBtn');
-const productInfoDiv = document.getElementById('productInfo');
-const notFoundDiv = document.getElementById('notFound');
-const productNameSpan = document.getElementById('productName');
-const productSalePriceSpan = document.getElementById('productSalePrice');
-const productCostPriceSpan = document.getElementById('productCostPrice');
-const addProductBtn = document.getElementById('addProductBtn');
-const modal = document.getElementById('productModal');
-const modalTitle = document.getElementById('modalTitle');
-const productForm = document.getElementById('productForm');
-const barcodeCodeInput = document.getElementById('barcodeCode');
-const productNameInput = document.getElementById('productNameInput');
-const productCostInput = document.getElementById('productCostInput');
-const productPriceInput = document.getElementById('productPriceInput');
-const productAliasesInput = document.getElementById('productAliasesInput');
-const closeModal = document.querySelector('.close');
-const editProductLink = document.getElementById('editProduct');
-const deleteProductLink = document.getElementById('deleteProduct');
-const toggleCostBtn = document.getElementById('toggleCostBtn');
-const manualSearchInput = document.getElementById('manualSearchInput');
-const manualSearchBtn = document.getElementById('manualSearchBtn');
-const viewAllBtn = document.getElementById('viewAllBtn');
+/*==================================================
+    STATE
+==================================================*/
 
-// Alias scanner elements
-const scanAliasBtn = document.getElementById('scanAliasBtn');
-const aliasScannerOverlay = document.getElementById('aliasScannerOverlay');
-const closeAliasScanner = document.querySelector('.close-alias-scanner');
-const stopAliasScannerBtn = document.getElementById('stopAliasScannerBtn');
-const aliasReaderDiv = document.getElementById('aliasReader');
-
-// ===== GLOBALS =====
 let currentProduct = null;
-let html5QrCode = null;
-let isScanning = false;
+
 let showCostPrice = false;
-let aliasHtml5QrCode = null;
-let isAliasScanning = false;
 
-// ===== TOGGLE COST PRICE VISIBILITY =====
-toggleCostBtn.addEventListener('click', () => {
-    showCostPrice = !showCostPrice;
-    toggleCostBtn.textContent = showCostPrice ? '👁️‍🗨️' : '👁️';
-    if (currentProduct) {
-        updateCostPriceDisplay(currentProduct.cprice);
-    }
-});
+let scanner = null;
+let isScanning = false;
 
-function updateCostPriceDisplay(cost) {
-    if (!cost || cost === '') {
-        productCostPriceSpan.textContent = '';
-        return;
-    }
-    const costNum = parseFloat(cost);
-    const formattedCost = isNaN(costNum) ? cost : `₱${costNum.toFixed(2)}`;
-    productCostPriceSpan.textContent = showCostPrice ? formattedCost : '***';
-}
+let aliasScanner = null;
+let aliasScanning = false;
 
-// ===== MAIN SCANNER =====
-startScannerBtn.addEventListener('click', async () => {
+/*==================================================
+    DOM
+==================================================*/
+
+// Scanner
+const startScannerBtn = document.getElementById("startScannerBtn");
+
+// Search
+const manualSearchInput = document.getElementById("manualSearchInput");
+const manualSearchBtn = document.getElementById("manualSearchBtn");
+const viewAllBtn = document.getElementById("viewAllBtn");
+const toggleCostBtn = document.getElementById("toggleCostBtn");
+
+// Product Card
+const productCard = document.getElementById("productInfo");
+const productName = document.getElementById("productName");
+const productBarcode = document.getElementById("productBarcode");
+const productSalePrice = document.getElementById("productSalePrice");
+const productCostPrice = document.getElementById("productCostPrice");
+
+const copyBarcodeBtn = document.getElementById("copyBarcodeBtn");
+
+// Not Found
+const notFoundCard = document.getElementById("notFound");
+const addProductBtn = document.getElementById("addProductBtn");
+
+// Product Modal
+const modal = document.getElementById("productModal");
+const modalTitle = document.getElementById("modalTitle");
+
+const productForm = document.getElementById("productForm");
+
+const barcodeCode = document.getElementById("barcodeCode");
+const productNameInput = document.getElementById("productNameInput");
+const productCostInput = document.getElementById("productCostInput");
+const productPriceInput = document.getElementById("productPriceInput");
+const productAliasesInput = document.getElementById("productAliasesInput");
+
+const closeModal = document.querySelector(".close");
+
+// Dropdown
+const dropdownBtn = document.querySelector(".dropdown-btn");
+const dropdownMenu = document.querySelector(".dropdown-content");
+
+const editProductBtn = document.getElementById("editProduct");
+const deleteProductBtn = document.getElementById("deleteProduct");
+
+// Alias Scanner
+const aliasOverlay = document.getElementById("aliasScannerOverlay");
+
+const scanAliasBtn = document.getElementById("scanAliasBtn");
+const closeAliasBtn = document.querySelector(".close-alias-scanner");
+const stopAliasBtn = document.getElementById("stopAliasScannerBtn");
+
+// Recent Scans
+const recentScansList = document.getElementById("recentScansList");
+
+/*==================================================
+    SCANNER
+==================================================*/
+
+async function startScanner() {
+
     if (isScanning) return;
-    try {
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
-        }
-        await html5QrCode.start(
-            { facingMode: "environment" },
-            {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            },
-            (decodedText) => {
-                if (isScanning) {
-                    handleBarcode(decodedText);
-                }
-            },
-            (error) => { /* ignore */ }
-        );
-        isScanning = true;
-        startScannerBtn.textContent = '🔍 Scanning...';
-    } catch (err) {
-        console.error("Camera error:", err);
-        alert("Could not access camera. Please ensure you're on HTTPS and granted permission.");
-    }
-});
 
-// ===== SEARCH LOGIC (supports aliases) =====
-async function findProductByCode(scannedCode) {
-    // First try exact match on the main 'code' field
-    const exactResponse = await fetch(`${SHEETDB_URL}/search?code=${encodeURIComponent(scannedCode)}`);
-    const exactData = await exactResponse.json();
-    if (exactData && exactData.length > 0) {
-        return exactData[0];
-    }
-    
-    // If not found, fetch all products and search inside aliases
-    const allResponse = await fetch(SHEETDB_URL);
-    const allProducts = await allResponse.json();
-    for (let product of allProducts) {
-        if (product.aliases) {
-            const aliasesList = product.aliases.split(',').map(a => a.trim());
-            if (aliasesList.includes(scannedCode)) {
-                return product;
-            }
+    try {
+
+        if (!scanner) {
+
+            scanner = new Html5Qrcode("reader");
+
         }
+
+        await scanner.start(
+
+            { facingMode: "environment" },
+
+            {
+
+                fps: 10,
+
+                qrbox: {
+                    width: 250,
+                    height: 250
+                },
+
+                aspectRatio: 1
+
+            },
+
+            async (barcode) => {
+
+                if (!isScanning) return;
+
+                await handleBarcode(barcode);
+
+            },
+
+            () => {}
+
+        );
+
+        isScanning = true;
+
+        startScannerBtn.textContent = "🔍 Scanning...";
+
+        startScannerBtn.classList.add("scanning");
+
     }
-    return null;
+
+    catch (err) {
+
+        console.error(err);
+
+        alert("Unable to access camera.");
+
+    }
+
 }
 
-// ===== BARCODE HANDLER =====
-async function handleBarcode(code) {
-    if (html5QrCode && isScanning) {
-        await html5QrCode.stop();
-        isScanning = false;
-        startScannerBtn.textContent = '📷 Start Scanner';
+async function stopScanner() {
+
+    if (!scanner) return;
+
+    try {
+
+        await scanner.stop();
+
     }
 
-    productInfoDiv.classList.add('hidden');
-    notFoundDiv.classList.add('hidden');
+    catch (err) {
+
+        console.warn("Scanner already stopped.");
+
+    }
+
+    isScanning = false;
+
+    startScannerBtn.textContent = "📷 Start Scanner";
+
+    startScannerBtn.classList.remove("scanning");
+
+}
+
+/*==================================================
+    BARCODE HANDLER
+==================================================*/
+
+async function handleBarcode(barcode) {
+
+    if (isScanning) {
+
+        await stopScanner();
+
+    }
+
     currentProduct = null;
 
-    try {
-        const product = await findProductByCode(code);
-        if (product) {
-            currentProduct = product;
-            displayProduct(currentProduct);
-        } else {
-            showNotFound(code);
+    productCard.classList.add("hidden");
+
+    notFoundCard.classList.add("hidden");
+
+    const product = Inventory.findProduct(barcode);
+
+    if (product) {
+
+        currentProduct = product;
+
+        Inventory.addRecentScan(product);
+
+        renderRecentScans();
+
+        displayProduct(product);
+
+        if (navigator.vibrate) {
+
+            navigator.vibrate(50);
+
         }
-    } catch (err) {
-        console.error("Lookup error:", err);
-        alert("Error connecting to database. Please check your internet.");
+
     }
+
+    else {
+
+        showNotFound(barcode);
+
+    }
+
 }
 
-// ===== DISPLAY PRODUCT =====
+/*==================================================
+    DISPLAY PRODUCT
+==================================================*/
+
 function displayProduct(product) {
-    productNameSpan.textContent = product.name;
-    const saleNum = parseFloat(product.price);
-    productSalePriceSpan.textContent = isNaN(saleNum) ? product.price : `₱${saleNum.toFixed(2)}`;
-    updateCostPriceDisplay(product.cprice);
-    productInfoDiv.classList.remove('hidden');
-    notFoundDiv.classList.add('hidden');
+
+    productName.textContent = product.name;
+
+    if (productBarcode) {
+        productBarcode.textContent = product.code;
+    }
+
+    productSalePrice.textContent =
+        Inventory.formatCurrency(product.price);
+
+    updateCostPrice(product.cprice);
+
+    productCard.classList.remove("hidden");
+    notFoundCard.classList.add("hidden");
+
 }
 
-// ===== SHOW NOT FOUND =====
-function showNotFound(code) {
-    notFoundDiv.classList.remove('hidden');
-    productInfoDiv.classList.add('hidden');
-    barcodeCodeInput.value = code;
-    // Reset modal fields for new product
-    productNameInput.value = '';
-    productCostInput.value = '';
-    productPriceInput.value = '';
-    productAliasesInput.value = '';
-}
+function updateCostPrice(cost) {
 
-// ===== DROPDOWN MENU =====
-const dropdownBtn = document.querySelector('.dropdown-btn');
-const dropdownContent = document.querySelector('.dropdown-content');
+    if (!cost) {
 
-dropdownBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    dropdownContent.classList.toggle('show');
-});
+        productCostPrice.textContent = "";
 
-window.addEventListener('click', () => {
-    if (dropdownContent.classList.contains('show')) {
-        dropdownContent.classList.remove('show');
-    }
-});
-
-// ===== EDIT PRODUCT =====
-editProductLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (!currentProduct) return;
-    
-    modalTitle.textContent = 'Edit Product';
-    barcodeCodeInput.value = currentProduct.code;
-    productNameInput.value = currentProduct.name;
-    productCostInput.value = currentProduct.cprice || '';
-    productPriceInput.value = currentProduct.price;
-    productAliasesInput.value = currentProduct.aliases || '';
-    modal.classList.remove('hidden');
-    dropdownContent.classList.remove('show');
-});
-
-// ===== DELETE PRODUCT =====
-deleteProductLink.addEventListener('click', async (e) => {
-    e.preventDefault();
-    if (!currentProduct) return;
-    
-    if (confirm(`Delete "${currentProduct.name}" permanently?`)) {
-        try {
-            const response = await fetch(`${SHEETDB_URL}/code/${encodeURIComponent(currentProduct.code)}`, {
-                method: 'DELETE'
-            });
-            if (response.ok) {
-                alert('Product deleted successfully');
-                productInfoDiv.classList.add('hidden');
-                currentProduct = null;
-            } else {
-                throw new Error('Delete failed');
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Delete failed. Please try again.');
-        }
-    }
-    dropdownContent.classList.remove('show');
-});
-
-// ===== ADD PRODUCT BUTTON =====
-addProductBtn.addEventListener('click', () => {
-    modalTitle.textContent = 'Add Product';
-    productNameInput.value = '';
-    productCostInput.value = '';
-    productPriceInput.value = '';
-    productAliasesInput.value = '';
-    modal.classList.remove('hidden');
-});
-
-// ===== FORM SUBMIT (Add or Update) =====
-productForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const code = barcodeCodeInput.value.trim();
-    const name = productNameInput.value.trim();
-    const cprice = productCostInput.value.trim();
-    const price = productPriceInput.value.trim();
-    const aliases = productAliasesInput.value.trim();
-    
-    if (!code || !name || !cprice || !price) {
-        alert('Please fill all required fields (Code, Name, Cost Price, Sale Price)');
         return;
-    }
-    
-    const productData = { code, name, cprice, price };
-    if (aliases) {
-        productData.aliases = aliases;
-    }
-    
-    try {
-        if (modalTitle.textContent === 'Add Product') {
-            const response = await fetch(SHEETDB_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(productData)
-            });
-            if (response.ok) {
-                alert('Product added successfully');
-                currentProduct = productData;
-                displayProduct(currentProduct);
-                notFoundDiv.classList.add('hidden');
-            } else {
-                throw new Error('Add failed');
-            }
-        } else {
-            const response = await fetch(`${SHEETDB_URL}/code/${encodeURIComponent(code)}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(productData)
-            });
-            if (response.ok) {
-                alert('Product updated successfully');
-                currentProduct = productData;
-                displayProduct(currentProduct);
-            } else {
-                throw new Error('Update failed');
-            }
-        }
-        modal.classList.add('hidden');
-        productForm.reset();
-    } catch (err) {
-        console.error(err);
-        alert('Operation failed. Please try again.');
-    }
-});
 
-// ===== CLOSE MODAL =====
-closeModal.addEventListener('click', () => {
-    modal.classList.add('hidden');
-});
-
-window.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        modal.classList.add('hidden');
     }
-});
 
-// ===== MANUAL SEARCH =====
-manualSearchBtn.addEventListener('click', () => {
+    productCostPrice.textContent =
+
+        showCostPrice
+
+        ? Inventory.formatCurrency(cost)
+
+        : "*****";
+
+}
+
+/*==================================================
+    PRODUCT NOT FOUND
+==================================================*/
+
+function showNotFound(barcode) {
+
+    barcodeCode.value = barcode;
+
+    currentProduct = null;
+
+    productCard.classList.add("hidden");
+
+    notFoundCard.classList.remove("hidden");
+
+}
+
+/*==================================================
+    MANUAL SEARCH
+==================================================*/
+
+function manualSearch() {
+
     const barcode = manualSearchInput.value.trim();
-    if (barcode) {
-        handleBarcode(barcode);
-        manualSearchInput.value = '';
-    } else {
-        alert('Please enter a barcode number');
+
+    if (!barcode) {
+
+        alert("Enter a barcode.");
+
+        return;
+
     }
-});
 
-manualSearchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        manualSearchBtn.click();
+    currentProduct = null;
+
+    productCard.classList.add("hidden");
+    notFoundCard.classList.add("hidden");
+
+    const product = Inventory.findProduct(barcode);
+
+    if (product) {
+
+        currentProduct = product;
+
+        Inventory.addRecentScan(product);
+
+        renderRecentScans();
+
+        displayProduct(product);
+
     }
+
+    else {
+
+        showNotFound(barcode);
+
+    }
+
+    manualSearchInput.value = "";
+
+}
+
+/*==================================================
+    COST TOGGLE
+==================================================*/
+
+toggleCostBtn.addEventListener("click", () => {
+
+    showCostPrice = !showCostPrice;
+
+    toggleCostBtn.textContent =
+
+        showCostPrice
+
+        ? "👁️‍🗨️"
+
+        : "👁️";
+
+    if (currentProduct) {
+
+        updateCostPrice(currentProduct.cprice);
+
+    }
+
 });
 
-// ===== VIEW ALL PRODUCTS BUTTON =====
-viewAllBtn.addEventListener('click', () => {
-    window.open('list.html', '_blank');
-});
+/*==================================================
+    COPY BARCODE
+==================================================*/
 
-// ===== ALIAS SCANNER FUNCTIONS =====
-async function startAliasScanner() {
-    if (isAliasScanning) return;
-    try {
-        if (!aliasHtml5QrCode) {
-            aliasHtml5QrCode = new Html5Qrcode("aliasReader");
+if (copyBarcodeBtn) {
+
+    copyBarcodeBtn.addEventListener("click", async () => {
+
+        if (!currentProduct) return;
+
+        const copied = await Inventory.copy(currentProduct.code);
+
+        if (copied) {
+
+            copyBarcodeBtn.textContent = "✅";
+
+            setTimeout(() => {
+
+                copyBarcodeBtn.textContent = "📋";
+
+            }, 1200);
+
         }
-        await aliasHtml5QrCode.start(
+
+    });
+
+}
+
+/*==================================================
+    PRODUCT MODAL
+==================================================*/
+
+function openAddModal(barcode = "") {
+
+    modalTitle.textContent = "Add Product";
+
+    barcodeCode.value = barcode;
+
+    productNameInput.value = "";
+    productCostInput.value = "";
+    productPriceInput.value = "";
+    productAliasesInput.value = "";
+
+    modal.classList.remove("hidden");
+
+}
+
+function openEditModal() {
+
+    if (!currentProduct) return;
+
+    modalTitle.textContent = "Edit Product";
+
+    barcodeCode.value = currentProduct.code;
+    productNameInput.value = currentProduct.name;
+    productCostInput.value = currentProduct.cprice || "";
+    productPriceInput.value = currentProduct.price;
+    productAliasesInput.value =
+        (currentProduct.aliases || "").replaceAll("|", ", ");
+
+    modal.classList.remove("hidden");
+
+}
+
+/*==================================================
+    SAVE PRODUCT
+==================================================*/
+
+productForm.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const payload = {
+
+        code: barcodeCode.value.trim(),
+        name: productNameInput.value.trim(),
+        cprice: productCostInput.value.trim(),
+        price: productPriceInput.value.trim(),
+        aliases: productAliasesInput.value.trim()
+
+    };
+
+    try {
+
+        if (modalTitle.textContent === "Add Product") {
+
+            currentProduct =
+                await Inventory.addProduct(payload);
+
+        }
+
+        else {
+
+            currentProduct =
+                await Inventory.updateProduct(payload);
+
+        }
+
+        Inventory.addRecentScan(currentProduct);
+
+        renderRecentScans();
+
+        displayProduct(currentProduct);
+
+        modal.classList.add("hidden");
+
+        productForm.reset();
+
+        notFoundCard.classList.add("hidden");
+
+    }
+
+    catch (err) {
+
+        alert(err.message);
+
+    }
+
+});
+
+/*==================================================
+    DELETE PRODUCT
+==================================================*/
+
+async function deleteCurrentProduct() {
+
+    if (!currentProduct) return;
+
+    if (!confirm(`Delete "${currentProduct.name}"?`)) {
+
+        return;
+
+    }
+
+    try {
+
+        await Inventory.deleteProduct(currentProduct.code);
+
+        currentProduct = null;
+        
+        renderRecentScans();
+
+        productCard.classList.add("hidden");
+
+    }
+
+    catch (err) {
+
+        alert(err.message);
+
+    }
+
+}
+
+/*==================================================
+    DROPDOWN
+==================================================*/
+
+dropdownBtn.addEventListener("click", (e) => {
+
+    e.stopPropagation();
+
+    dropdownMenu.classList.toggle("show");
+
+});
+
+window.addEventListener("click", () => {
+
+    dropdownMenu.classList.remove("show");
+
+});
+
+/*==================================================
+    BUTTONS
+==================================================*/
+
+addProductBtn.addEventListener("click", () => {
+
+    openAddModal(barcodeCode.value);
+
+});
+
+editProductBtn.addEventListener("click", () => {
+
+    dropdownMenu.classList.remove("show");
+
+    openEditModal();
+
+});
+
+deleteProductBtn.addEventListener("click", () => {
+
+    dropdownMenu.classList.remove("show");
+
+    deleteCurrentProduct();
+
+});
+
+closeModal.addEventListener("click", () => {
+
+    modal.classList.add("hidden");
+
+});
+
+window.addEventListener("click", (e) => {
+
+    if (e.target === modal) {
+
+        modal.classList.add("hidden");
+
+    }
+
+});
+
+/*==================================================
+    ALIAS SCANNER
+==================================================*/
+
+async function startAliasScanner() {
+
+    if (aliasScanning) return;
+
+    try {
+
+        if (!aliasScanner) {
+
+            aliasScanner = new Html5Qrcode("aliasReader");
+
+        }
+
+        await aliasScanner.start(
+
             { facingMode: "environment" },
+
             {
                 fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            },
-            async (decodedText) => {
-                if (isAliasScanning) {
-                    // Append the scanned barcode to the aliases input
-                    let currentValue = productAliasesInput.value.trim();
-                    if (currentValue === "") {
-                        productAliasesInput.value = decodedText;
-                    } else {
-                        productAliasesInput.value = currentValue + "," + decodedText;
-                    }
-                    // Stop scanner and close overlay automatically after a successful scan
-                    await stopAliasScanner();
-                    aliasScannerOverlay.classList.add('hidden');
+                qrbox: {
+                    width: 250,
+                    height: 250
                 }
             },
-            (error) => { /* ignore */ }
+
+            async (barcode) => {
+
+                const current = productAliasesInput.value.trim();
+
+                productAliasesInput.value = current
+                    ? `${current}, ${barcode}`
+                    : barcode;
+
+                await stopAliasScanner();
+
+                setTimeout(() => {
+
+                    aliasOverlay.classList.add("hidden");
+
+                }, 100);
+
+            },
+
+            () => {}
+
         );
-        isAliasScanning = true;
-    } catch (err) {
-        console.error("Alias scanner error:", err);
-        alert("Could not access camera for alias scanning.");
+
+        aliasScanning = true;
+
     }
+
+    catch {
+
+        alert("Unable to access camera.");
+
+    }
+
 }
 
 async function stopAliasScanner() {
-    if (aliasHtml5QrCode && isAliasScanning) {
-        await aliasHtml5QrCode.stop();
-        isAliasScanning = false;
+
+    if (!aliasScanner) return;
+
+    try {
+
+        await aliasScanner.stop();
+
     }
+
+    catch (err) {
+
+        console.warn("Alias scanner already stopped.");
+
+    }
+
+    aliasScanning = false;
+
 }
 
-// Open alias scanner overlay
-scanAliasBtn.addEventListener('click', () => {
-    aliasScannerOverlay.classList.remove('hidden');
+/*==================================================
+    RECENT SCANS
+==================================================*/
+
+function renderRecentScans() {
+
+    if (!recentScansList) return;
+
+    const recent = Inventory.getRecentScans();
+
+    if (!recent.length) {
+
+        recentScansList.innerHTML = `
+            <div class="empty-recent">
+                No recent scans.
+            </div>
+        `;
+
+        return;
+
+    }
+
+    recentScansList.innerHTML = recent.map(item => `
+
+        <div class="recent-item">
+
+            <div class="recent-name">
+                ${Inventory.escapeHtml(item.name)}
+            </div>
+
+            <div class="recent-barcode">
+                ${Inventory.escapeHtml(item.code)}
+            </div>
+
+        </div>
+
+    `).join("");
+
+}
+
+/*==================================================
+    EVENTS
+==================================================*/
+
+startScannerBtn.addEventListener("click", startScanner);
+
+manualSearchBtn.addEventListener("click", manualSearch);
+
+manualSearchInput.addEventListener("keypress", e => {
+
+    if (e.key === "Enter") {
+
+        manualSearch();
+
+    }
+
+});
+
+viewAllBtn.addEventListener("click", () => {
+
+    window.location.href = "list.html";
+
+});
+
+scanAliasBtn.addEventListener("click", () => {
+
+    aliasOverlay.classList.remove("hidden");
+
     startAliasScanner();
+
 });
 
-// Close alias scanner overlay (manual close)
-closeAliasScanner.addEventListener('click', async () => {
+closeAliasBtn.addEventListener("click", async () => {
+
     await stopAliasScanner();
-    aliasScannerOverlay.classList.add('hidden');
+
+    aliasOverlay.classList.add("hidden");
+
 });
 
-stopAliasScannerBtn.addEventListener('click', async () => {
+stopAliasBtn.addEventListener("click", async () => {
+
     await stopAliasScanner();
-    aliasScannerOverlay.classList.add('hidden');
+
+    aliasOverlay.classList.add("hidden");
+
 });
 
-// Also close if clicking outside the modal content
-window.addEventListener('click', async (e) => {
-    if (e.target === aliasScannerOverlay) {
+window.addEventListener("click", async e => {
+
+    if (e.target === aliasOverlay) {
+
         await stopAliasScanner();
-        aliasScannerOverlay.classList.add('hidden');
+
+        aliasOverlay.classList.add("hidden");
+
     }
+
 });
 
-// ===== SERVICE WORKER REGISTRATION (optional) =====
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker registered', reg))
-        .catch(err => console.error('SW registration failed', err));
-}
+/*==================================================
+    INITIALIZE
+==================================================*/
+
+(async () => {
+
+    await Inventory.fetchProducts();
+
+    renderRecentScans();
+
+    console.log(
+        `Scanner Ready (${Inventory.getProductCount()} products)`
+    );
+
+})();
