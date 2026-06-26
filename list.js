@@ -47,6 +47,10 @@ const closeAliasBtn = document.querySelector(".close-edit-scanner");
 
 const stopAliasBtn = document.getElementById("stopEditAliasScannerBtn");
 
+const alphabetScrollbar = document.getElementById("alphabetScrollbar");
+
+const letterPreview = document.getElementById("letterPreview");
+
 /*==================================================
     LOAD
 ==================================================*/
@@ -87,6 +91,8 @@ function renderProducts() {
         .join("");
 
     attachEvents();
+    
+    buildAlphabetScrollbar();
 
 }
 
@@ -94,7 +100,9 @@ function createProductCard(product) {
 
     return `
 
-        <div class="product-item">
+        <div
+            class="product-item"
+            data-letter="${(product.name || "#").trim().charAt(0).toUpperCase()}">
 
             <div class="product-info">
 
@@ -349,6 +357,180 @@ function attachEvents() {
 }
 
 /*==================================================
+    ALPHABET SCROLLBAR
+==================================================*/
+
+function buildAlphabetScrollbar() {
+
+    alphabetScrollbar.innerHTML = "";
+
+    const letters = [];
+
+    filteredProducts.forEach(product => {
+
+        const letter = (product.name || "#")
+            .trim()
+            .charAt(0)
+            .toUpperCase();
+
+        if (!letters.includes(letter)) {
+
+            letters.push(letter);
+
+        }
+
+    });
+
+    letters.forEach(letter => {
+
+        const item = document.createElement("div");
+
+        item.className = "alphabet-letter";
+
+        item.textContent = letter;
+
+        item.dataset.letter = letter;
+
+        item.onclick = () => {
+
+            scrollToLetter(letter);
+
+        };
+
+        alphabetScrollbar.appendChild(item);
+
+    });
+
+}
+
+/*==================================================
+    SCROLL TO LETTER
+==================================================*/
+
+function scrollToLetter(letter) {
+
+    const target = document.querySelector(
+
+        `.product-item[data-letter="${letter}"]`
+
+    );
+
+    if (!target) return;
+
+    document.querySelectorAll(".alphabet-letter").forEach(item => {
+
+        item.classList.remove("active");
+
+    });
+
+    const active = alphabetScrollbar.querySelector(
+
+        `[data-letter="${letter}"]`
+
+    );
+
+    if (active) {
+
+        active.classList.add("active");
+
+    }
+
+    letterPreview.textContent = letter;
+
+    letterPreview.classList.remove("hidden");
+
+    target.scrollIntoView({
+
+        behavior: "smooth",
+
+        block: "start"
+
+    });
+
+    if (navigator.vibrate) {
+
+        navigator.vibrate(10);
+
+    }
+
+    clearTimeout(letterPreview._timer);
+
+    letterPreview._timer = setTimeout(() => {
+
+        letterPreview.classList.add("hidden");
+
+    }, 500);
+
+}
+
+/*==================================================
+    ALPHABET DRAG
+==================================================*/
+
+let draggingAlphabet = false;
+
+function handleAlphabetDrag(clientY) {
+
+    const rect = alphabetScrollbar.getBoundingClientRect();
+
+    if (
+        clientY < rect.top ||
+        clientY > rect.bottom
+    ) return;
+
+    const letters = [...alphabetScrollbar.children];
+
+    const itemHeight = rect.height / letters.length;
+
+    const index = Math.min(
+        letters.length - 1,
+        Math.max(
+            0,
+            Math.floor((clientY - rect.top) / itemHeight)
+        )
+    );
+
+    const letter = letters[index].dataset.letter;
+
+    scrollToLetter(letter);
+
+}
+
+alphabetScrollbar.addEventListener("touchstart", e => {
+
+    draggingAlphabet = true;
+
+    handleAlphabetDrag(e.touches[0].clientY);
+
+});
+
+alphabetScrollbar.addEventListener("touchmove", e => {
+
+    if (!draggingAlphabet) return;
+
+    e.preventDefault();
+
+    handleAlphabetDrag(e.touches[0].clientY);
+
+});
+
+window.addEventListener("touchend", () => {
+
+    draggingAlphabet = false;
+
+    document
+        .querySelectorAll(".alphabet-letter")
+        .forEach(letter => {
+
+            letter.classList.remove("active");
+
+        });
+
+    letterPreview.classList.add("hidden");
+
+});
+
+/*==================================================
     EDIT
 ==================================================*/
 
@@ -460,13 +642,19 @@ async function startAliasScanner() {
 
                 fps: 10,
 
-                qrbox: {
+                qrbox:(viewfinderWidth, viewfinderHeight)=>{
 
-                    width: 250,
+                    const width = Math.min(viewfinderWidth * 0.85, 340);
 
-                    height: 250
+                    return {
 
-                }
+                        width,
+
+                        height: width * 0.45
+
+                    };
+
+                },
 
             },
 

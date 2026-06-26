@@ -569,10 +569,13 @@ async function startAliasScanner() {
 
             {
                 fps: 10,
-                qrbox: {
-                    width: 250,
-                    height: 250
-                }
+                qrbox:(viewfinderWidth, viewfinderHeight)=>{
+                    const width = Math.min(viewfinderWidth * 0.85, 340);
+                    return {
+                        width,
+                        height: width * 0.45
+                    };
+                },
             },
 
             async (barcode) => {
