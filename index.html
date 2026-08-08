@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Inventory Scanner</title>
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="scan.css">
+
+</head>
+<body>
+
+<!-- ========== TOP BAR ========== -->
+<header class="topbar">
+    <div class="topbar-title">
+        <h1>📦 Inventory Scanner</h1>
+        <span id="productCountLabel">Loading…</span>
+    </div>
+    <div class="topbar-actions">
+        <button id="toggleCostBtn" class="topbar-icon-btn" title="Show/hide cost price">👁</button>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- ========== SCANNER ========== -->
+    <section class="card scan-card">
+        <div id="reader" class="scan-frame">
+            <p class="scan-hint">Point your camera at a barcode</p>
+        </div>
+        <button id="startScannerBtn" class="btn btn-primary btn-block">
+            <span>📷</span> Start Scanner
+        </button>
+    </section>
+
+    <!-- ========== MANUAL LOOKUP ========== -->
+    <section class="search-bar">
+        <input id="manualSearchInput" type="text" placeholder="Look up a barcode…" autocomplete="off">
+        <button id="manualSearchBtn" class="icon-btn primary" title="Search">🔍</button>
+    </section>
+
+    <!-- ========== PRODUCT RESULT ========== -->
+    <section id="productInfo" class="card product-card hidden">
+
+        <div class="tag-strip"></div>
+
+        <div class="product-top">
+            <h2 id="productName">Product Name</h2>
+            <div id="productBarcode" class="barcode-chip">#000000000000</div>
+        </div>
+
+        <div class="price-row">
+            <div>
+                <span class="section-label">Sale price</span>
+                <p id="productSalePrice" class="sale-price">₱0.00</p>
+            </div>
+            <div>
+                <span class="section-label">Cost</span>
+                <p id="productCostPrice" class="cost-price">*****</p>
+            </div>
+        </div>
+
+        <div class="product-actions">
+            <button id="copyBarcodeBtn" class="btn btn-soft btn-block">📋 Copy Barcode</button>
+            <button id="editProduct" class="icon-btn primary" title="Edit product">✏️</button>
+            <button id="deleteProduct" class="icon-btn danger" title="Delete product">🗑️</button>
+        </div>
+
+    </section>
+
+    <!-- ========== NOT FOUND ========== -->
+    <section id="notFound" class="card empty-state hidden">
+        <div class="empty-icon">❌</div>
+        <h3>Product not found</h3>
+        <p>This barcode isn't in your inventory yet.</p>
+        <button id="addProductBtn" class="btn btn-success btn-block" style="margin-top:16px;">➕ Add Product</button>
+    </section>
+
+    <!-- ========== RECENT SCANS ========== -->
+    <section class="recent-scans">
+        <span class="section-label">🕒 Recent scans</span>
+        <div id="recentScansList">
+            <div class="empty-recent">No recent scans yet.</div>
+        </div>
+    </section>
+
+</div>
+
+<!-- ========== BOTTOM NAV ========== -->
+<nav class="bottom-nav">
+    <button class="nav-tab active">
+        <span class="nav-icon">📷</span> Scan
+    </button>
+    <button id="goToListBtn" class="nav-tab">
+        <span class="nav-icon">📦</span> Inventory
+    </button>
+</nav>
+
+<!-- ========== ADD / EDIT PRODUCT SHEET ========== -->
+<div id="productModal" class="sheet-overlay hidden">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h3 id="modalTitle">Add Product</h3>
+            <button class="sheet-close close">&times;</button>
+        </div>
+
+        <form id="productForm">
+            <input type="hidden" id="barcodeCode">
+
+            <div class="field">
+                <label>Product Name</label>
+                <input id="productNameInput" type="text" required>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label>Cost Price (₱)</label>
+                    <input id="productCostInput" type="number" step="0.01" required>
+                </div>
+                <div class="field">
+                    <label>Sale Price (₱)</label>
+                    <input id="productPriceInput" type="number" step="0.01" required>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Additional Barcodes</label>
+                <div class="input-with-btn">
+                    <input id="productAliasesInput" type="text" placeholder="12345, 67890">
+                    <button type="button" id="scanAliasBtn" class="icon-btn primary">📷</button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top:6px;">💾 Save Product</button>
+        </form>
+    </div>
+</div>
+
+<!-- ========== ALIAS SCANNER ========== -->
+<div id="aliasScannerOverlay" class="sheet-overlay hidden">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h3>Scan Additional Barcode</h3>
+            <button class="sheet-close close-alias-scanner">&times;</button>
+        </div>
+        <div id="aliasReader" class="scan-frame"></div>
+        <button id="stopAliasScannerBtn" class="btn btn-ghost btn-block" style="margin-top:16px;">Stop Scanner</button>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="common.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>

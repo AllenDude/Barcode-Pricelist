@@ -1,0 +1,126 @@
+/*==================================================
+  SCANNER PAGE
+==================================================*/
+
+.scan-card{ padding:16px; }
+
+.scan-card .scan-frame{ margin-bottom:14px; }
+
+#reader.scanning{ border-style:solid; }
+
+/*==================================================
+  PRODUCT CARD
+==================================================*/
+
+.product-card{ position:relative; overflow:hidden; padding-top:26px; }
+
+.tag-strip{
+    position:absolute;
+    top:0; left:0; right:0;
+    height:6px;
+    background:linear-gradient(90deg,var(--primary),#8B5CF6);
+}
+
+.product-top{ margin-bottom:16px; }
+
+#productName{
+    font-family:var(--font-display);
+    font-size:1.55rem;
+    font-weight:700;
+    letter-spacing:-.3px;
+    line-height:1.2;
+    margin-bottom:10px;
+}
+
+.price-row{
+    display:flex;
+    gap:22px;
+    padding:16px 0;
+    margin-bottom:16px;
+    border-top:1px dashed var(--border);
+    border-bottom:1px dashed var(--border);
+}
+
+.sale-price{
+    font-family:var(--font-mono);
+    font-size:1.8rem;
+    font-weight:700;
+    color:var(--primary);
+    letter-spacing:-.5px;
+    margin-top:4px;
+}
+
+.cost-price{
+    font-family:var(--font-mono);
+    font-size:1.8rem;
+    font-weight:700;
+    color:var(--text-light);
+    letter-spacing:-.5px;
+    margin-top:4px;
+}
+
+.product-actions{
+    display:flex;
+    gap:10px;
+}
+
+/*==================================================
+  RECENT SCANS
+==================================================*/
+
+.recent-scans{ display:flex; flex-direction:column; gap:12px; }
+
+#recentScansList{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.empty-recent{
+    text-align:center;
+    padding:20px;
+    color:var(--text-light);
+    font-size:.9rem;
+    background:var(--surface);
+    border:1px dashed var(--border);
+    border-radius:var(--radius);
+}
+
+.recent-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:14px 16px;
+    border-radius:16px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    cursor:pointer;
+    transition:var(--transition);
+}
+
+.recent-item:active{ transform:scale(.98); background:var(--surface-hover); }
+
+.recent-name{
+    font-weight:700;
+    font-size:.92rem;
+    color:var(--text);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.recent-barcode{
+    font-family:var(--font-mono);
+    font-size:.75rem;
+    color:var(--text-light);
+    margin-top:2px;
+}
+
+.recent-price{
+    font-family:var(--font-mono);
+    font-weight:700;
+    color:var(--primary);
+    font-size:.9rem;
+    flex-shrink:0;
+}

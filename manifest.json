@@ -1,0 +1,10 @@
+{
+  "name": "Inventory Scanner",
+  "short_name": "Inventory",
+  "description": "Scan, search, and manage product inventory",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#4F46E5",
+  "orientation": "portrait"
+}

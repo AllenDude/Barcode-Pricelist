@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Inventory</title>
+
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="list.css">
+
+</head>
+<body>
+
+<!-- ========== TOP BAR ========== -->
+<header class="topbar">
+    <button id="closePageBtn" class="topbar-back" title="Back">←</button>
+    <div class="topbar-title">
+        <h1>📦 Inventory</h1>
+        <span id="productCount">0 products</span>
+    </div>
+    <div class="topbar-actions">
+        <button id="toggleCostListBtn" class="topbar-icon-btn" title="Show/hide cost">👁</button>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- ========== SEARCH ========== -->
+    <section class="search-bar">
+        <input id="searchInput" type="text" placeholder="Search by name, barcode or alias…" autocomplete="off">
+    </section>
+
+    <!-- ========== PRODUCT LIST ========== -->
+    <section id="productList" class="product-list">
+        <div class="empty-state">
+            <div class="empty-icon">⏳</div>
+            <h3>Loading inventory…</h3>
+        </div>
+    </section>
+
+</div>
+
+<!-- ========== BOTTOM NAV ========== -->
+<nav class="bottom-nav">
+    <button id="goToScanBtn" class="nav-tab">
+        <span class="nav-icon">📷</span> Scan
+    </button>
+    <button class="nav-tab active">
+        <span class="nav-icon">📦</span> Inventory
+    </button>
+</nav>
+
+<!-- ========== EDIT PRODUCT SHEET ========== -->
+<div id="editModal" class="sheet-overlay hidden">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h3>Edit Product</h3>
+            <button class="sheet-close close-modal">&times;</button>
+        </div>
+
+        <form id="editForm">
+            <input id="editCode" type="hidden">
+
+            <div class="field">
+                <label>Product Name</label>
+                <input id="editName" type="text" required>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label>Cost Price (₱)</label>
+                    <input id="editCost" type="number" step="0.01" required>
+                </div>
+                <div class="field">
+                    <label>Sale Price (₱)</label>
+                    <input id="editPrice" type="number" step="0.01" required>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Additional Barcodes</label>
+                <div class="input-with-btn">
+                    <input id="editAliases" type="text" placeholder="12345, 67890">
+                    <button type="button" id="scanEditAliasBtn" class="icon-btn primary">📷</button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top:6px;">💾 Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<!-- ========== ALIAS SCANNER ========== -->
+<div id="editAliasScannerOverlay" class="sheet-overlay hidden">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h3>Scan Additional Barcode</h3>
+            <button class="sheet-close close-edit-scanner">&times;</button>
+        </div>
+        <div id="editAliasReader" class="scan-frame"></div>
+        <button id="stopEditAliasScannerBtn" class="btn btn-ghost btn-block" style="margin-top:16px;">Stop Scanner</button>
+    </div>
+</div>
+
+<div id="alphabetScrollbar" class="alphabet-scrollbar"></div>
+<div id="letterPreview" class="letter-preview hidden">A</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="common.js"></script>
+<script src="list.js"></script>
+
+</body>
+</html>
