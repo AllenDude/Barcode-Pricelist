@@ -80,6 +80,25 @@
 }
 
 /*==================================================
+  NOT FOUND
+==================================================*/
+
+.not-found-actions{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+}
+
+.not-found-actions #rescanBtn{
+    flex:0 0 auto;
+    padding:0 18px;
+}
+
+.not-found-actions #addProductBtn{
+    flex:1;
+}
+
+/*==================================================
   CART
 ==================================================*/
 
@@ -133,6 +152,13 @@
     margin-top:3px;
 }
 
+.cart-item-buttons{
+    display:flex;
+    gap:6px;
+    flex-shrink:0;
+}
+
+.cart-item-edit,
 .cart-item-remove{
     width:34px;
     height:34px;
@@ -153,7 +179,7 @@
 .qty-stepper{
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:8px;
     background:var(--surface-hover);
     border-radius:var(--radius-pill);
     padding:4px;
@@ -174,11 +200,21 @@
 
 .qty-btn:active{ transform:scale(.92); }
 
-.qty-value{
-    min-width:22px;
+.qty-input{
+    width:40px;
     text-align:center;
     font-weight:800;
     font-size:.9rem;
+    border:none;
+    background:transparent;
+    color:var(--text);
+    -moz-appearance:textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
 }
 
 .cart-item-total{
@@ -241,6 +277,115 @@
     line-height:1.45;
     color:var(--text-light);
     margin-bottom:14px;
+}
+
+/*==================================================
+  RECEIPT
+==================================================*/
+
+.receipt{
+    font-family:var(--font-mono);
+    background:var(--surface-hover);
+    border:1px dashed var(--border);
+    border-radius:var(--radius);
+    padding:18px;
+}
+
+.receipt-store{
+    text-align:center;
+    font-weight:800;
+    font-size:1rem;
+    letter-spacing:.03em;
+}
+
+.receipt-meta{
+    text-align:center;
+    font-size:.72rem;
+    color:var(--text-light);
+    margin-top:4px;
+}
+
+.receipt-divider{
+    border-top:1px dashed var(--border);
+    margin:12px 0;
+}
+
+.receipt-items{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.receipt-line{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    font-size:.8rem;
+}
+
+.receipt-line-name{
+    flex:1;
+    min-width:0;
+}
+
+.receipt-line-qty{
+    color:var(--text-light);
+    flex-shrink:0;
+}
+
+.receipt-line-total{
+    font-weight:700;
+    flex-shrink:0;
+}
+
+.receipt-total-row{
+    display:flex;
+    justify-content:space-between;
+    font-size:1.1rem;
+    font-weight:800;
+}
+
+.receipt-footer{
+    text-align:center;
+    font-size:.75rem;
+    color:var(--text-light);
+    margin-top:14px;
+}
+
+.receipt-actions{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+}
+
+.receipt-actions #printReceiptBtn{
+    flex:0 0 auto;
+    padding:0 18px;
+}
+
+.receipt-actions #doneReceiptBtn{
+    flex:1;
+}
+
+@media print{
+
+    body *{
+        visibility:hidden;
+    }
+
+    #receiptContent,
+    #receiptContent *{
+        visibility:visible;
+    }
+
+    #receiptContent{
+        position:absolute;
+        top:0;
+        left:0;
+        width:100%;
+        border:none;
+    }
+
 }
 
 /*==================================================

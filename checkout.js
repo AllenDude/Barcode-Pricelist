@@ -13,7 +13,10 @@ let activeCamera = null; // null | "back" | "front"
 
 // Cooldown so a single physical/camera scan can't get read twice in a row.
 let scanLocked = false;
-const SCAN_COOLDOWN_MS = 700;
+const SCAN_COOLDOWN_MS = 400;
+
+let currentNotFoundCode = "";
+let editCartItemAliases = ""; // preserved silently while editing a cart item
 
 /*==================================================
     DOM
@@ -31,6 +34,30 @@ const toggleFrontCamBtn = document.getElementById("toggleFrontCamBtn");
 const cameraFrame = document.getElementById("cameraFrame");
 const scanStatus = document.getElementById("scanStatus");
 
+// Not found
+const notFoundCard = document.getElementById("notFoundCard");
+const notFoundBarcode = document.getElementById("notFoundBarcode");
+const rescanBtn = document.getElementById("rescanBtn");
+const addProductBtn = document.getElementById("addProductBtn");
+
+// Add product sheet
+const addProductOverlay = document.getElementById("addProductOverlay");
+const addProductBarcode = document.getElementById("addProductBarcode");
+const addProductForm = document.getElementById("addProductForm");
+const addProductName = document.getElementById("addProductName");
+const addProductCost = document.getElementById("addProductCost");
+const addProductPrice = document.getElementById("addProductPrice");
+const closeAddProductBtn = document.querySelector(".close-add-product");
+
+// Edit cart item sheet
+const editCartItemOverlay = document.getElementById("editCartItemOverlay");
+const editCartItemCode = document.getElementById("editCartItemCode");
+const editCartItemForm = document.getElementById("editCartItemForm");
+const editCartItemName = document.getElementById("editCartItemName");
+const editCartItemCost = document.getElementById("editCartItemCost");
+const editCartItemPrice = document.getElementById("editCartItemPrice");
+const closeEditCartItemBtn = document.querySelector(".close-edit-cart-item");
+
 // Cart
 const cartList = document.getElementById("cartList");
 const cartItemCount = document.getElementById("cartItemCount");
@@ -40,13 +67,14 @@ const cartTotal = document.getElementById("cartTotal");
 const clearCartBtn = document.getElementById("clearCartBtn");
 const completeSaleBtn = document.getElementById("completeSaleBtn");
 
-// Quick add
-const quickAddOverlay = document.getElementById("quickAddOverlay");
-const quickAddBarcode = document.getElementById("quickAddBarcode");
-const quickAddForm = document.getElementById("quickAddForm");
-const quickAddName = document.getElementById("quickAddName");
-const quickAddPrice = document.getElementById("quickAddPrice");
-const closeQuickAddBtn = document.querySelector(".close-quick-add");
+// Receipt
+const receiptOverlay = document.getElementById("receiptOverlay");
+const receiptMeta = document.getElementById("receiptMeta");
+const receiptItems = document.getElementById("receiptItems");
+const receiptTotal = document.getElementById("receiptTotal");
+const printReceiptBtn = document.getElementById("printReceiptBtn");
+const doneReceiptBtn = document.getElementById("doneReceiptBtn");
+const closeReceiptBtn = document.querySelector(".close-receipt");
 
 // Nav
 const goToScanBtn = document.getElementById("goToScanBtn");
@@ -96,7 +124,7 @@ function flashStatus(message, type) {
 
 /*==================================================
     PROCESS SCAN (shared by physical scanner,
-    manual entry, and the front camera)
+    manual entry, and the camera)
 ==================================================*/
 
 async function processScan(rawCode) {
@@ -114,6 +142,8 @@ async function processScan(rawCode) {
 
     if (product) {
 
+        notFoundCard.classList.add("hidden");
+
         addToCart(product);
         flashStatus(`✅ Added: ${product.name}`, "ok");
 
@@ -127,11 +157,93 @@ async function processScan(rawCode) {
 
         if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
 
-        openQuickAdd(code);
+        currentNotFoundCode = code;
+        notFoundBarcode.textContent = "#" + code;
+        notFoundCard.classList.remove("hidden");
 
     }
 
 }
+
+/*==================================================
+    NOT FOUND — rescan or add
+==================================================*/
+
+rescanBtn.addEventListener("click", () => {
+
+    notFoundCard.classList.add("hidden");
+    scanInput.value = "";
+    scanInput.focus();
+
+});
+
+addProductBtn.addEventListener("click", () => {
+    openAddProduct(currentNotFoundCode);
+});
+
+function openAddProduct(code) {
+
+    addProductBarcode.textContent = "#" + code;
+    addProductForm.dataset.code = code;
+
+    addProductName.value = "";
+    addProductCost.value = "";
+    addProductPrice.value = "";
+
+    notFoundCard.classList.add("hidden");
+    addProductOverlay.classList.remove("hidden");
+
+    setTimeout(() => addProductName.focus(), 150);
+
+}
+
+function closeAddProduct() {
+
+    addProductOverlay.classList.add("hidden");
+    scanInput.focus();
+
+}
+
+addProductForm.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const code = addProductForm.dataset.code;
+    const name = addProductName.value.trim();
+    const cprice = addProductCost.value.trim();
+    const price = addProductPrice.value.trim();
+
+    try {
+
+        const payload = await Inventory.addProduct({
+            code,
+            name,
+            cprice,
+            price,
+            aliases: ""
+        });
+
+        addToCart(payload);
+        closeAddProduct();
+
+        showToast("Product added");
+        flashStatus(`✅ Added: ${payload.name}`, "ok");
+
+    }
+
+    catch (err) {
+        showToast(err.message);
+    }
+
+});
+
+closeAddProductBtn.addEventListener("click", closeAddProduct);
+
+addProductOverlay.addEventListener("click", (e) => {
+    if (e.target === addProductOverlay) {
+        closeAddProduct();
+    }
+});
 
 /*==================================================
     CART
@@ -151,7 +263,8 @@ function addToCart(product) {
             code: product.code,
             name: product.name,
             price: parseFloat(product.price) || 0,
-            qty: 1
+            qty: 1,
+            lastUpdated: product.lastUpdated || new Date().toISOString()
         });
 
     }
@@ -172,6 +285,17 @@ function changeQty(code, delta) {
         cart = cart.filter(i => i.code !== code);
     }
 
+    renderCart();
+
+}
+
+function setQty(code, value) {
+
+    const item = cart.find(i => i.code === code);
+
+    if (!item) return;
+
+    item.qty = value;
     renderCart();
 
 }
@@ -199,10 +323,13 @@ function cartRowHTML(item) {
 
                 <div>
                     <div class="cart-item-name">${Inventory.escapeHtml(item.name)}</div>
-                    <div class="cart-item-unit">${Inventory.formatCurrency(item.price)} each</div>
+                    <div class="cart-item-unit">${Inventory.formatCurrency(item.price)} each · 🔵 ${Inventory.formatDate(item.lastUpdated)}</div>
                 </div>
 
-                <button class="icon-btn danger cart-item-remove" data-action="remove" title="Remove">🗑️</button>
+                <div class="cart-item-buttons">
+                    <button class="icon-btn cart-item-edit" data-action="edit" title="Edit">✏️</button>
+                    <button class="icon-btn danger cart-item-remove" data-action="remove" title="Remove">🗑️</button>
+                </div>
 
             </div>
 
@@ -210,7 +337,7 @@ function cartRowHTML(item) {
 
                 <div class="qty-stepper">
                     <button class="qty-btn" data-action="dec" title="Decrease">−</button>
-                    <span class="qty-value">${item.qty}</span>
+                    <input type="number" class="qty-input" data-action="qtyinput" value="${item.qty}" min="1">
                     <button class="qty-btn" data-action="inc" title="Increase">+</button>
                 </div>
 
@@ -254,10 +381,97 @@ function attachCartEvents() {
         row.querySelector('[data-action="inc"]').onclick = () => changeQty(code, 1);
         row.querySelector('[data-action="dec"]').onclick = () => changeQty(code, -1);
         row.querySelector('[data-action="remove"]').onclick = () => removeFromCart(code);
+        row.querySelector('[data-action="edit"]').onclick = () => openEditCartItem(code);
+
+        row.querySelector(".qty-input").addEventListener("change", (e) => {
+
+            let value = parseInt(e.target.value, 10);
+
+            if (isNaN(value) || value < 1) {
+                value = 1;
+            }
+
+            setQty(code, value);
+
+        });
 
     });
 
 }
+
+/*==================================================
+    EDIT CART ITEM
+==================================================*/
+
+function openEditCartItem(code) {
+
+    const product = Inventory.findProduct(code);
+
+    if (!product) return;
+
+    editCartItemCode.value = product.code;
+    editCartItemName.value = product.name;
+    editCartItemCost.value = product.cprice || "";
+    editCartItemPrice.value = product.price;
+
+    editCartItemAliases = product.aliases || "";
+
+    editCartItemOverlay.classList.remove("hidden");
+
+}
+
+function closeEditCartItem() {
+    editCartItemOverlay.classList.add("hidden");
+}
+
+editCartItemForm.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const code = editCartItemCode.value;
+
+    try {
+
+        const updated = await Inventory.updateProduct({
+
+            code,
+            name: editCartItemName.value.trim(),
+            cprice: editCartItemCost.value.trim(),
+            price: editCartItemPrice.value.trim(),
+            aliases: editCartItemAliases
+
+        });
+
+        const cartItem = cart.find(i => i.code === code);
+
+        if (cartItem) {
+
+            cartItem.name = updated.name;
+            cartItem.price = parseFloat(updated.price) || 0;
+            cartItem.lastUpdated = updated.lastUpdated;
+
+            renderCart();
+
+        }
+
+        closeEditCartItem();
+        showToast("Product updated");
+
+    }
+
+    catch (err) {
+        showToast(err.message);
+    }
+
+});
+
+closeEditCartItemBtn.addEventListener("click", closeEditCartItem);
+
+editCartItemOverlay.addEventListener("click", (e) => {
+    if (e.target === editCartItemOverlay) {
+        closeEditCartItem();
+    }
+});
 
 /*==================================================
     TOTALS
@@ -275,71 +489,6 @@ function updateTotals() {
         `${itemCount} item${itemCount === 1 ? "" : "s"} • ${Inventory.formatCurrency(total)}`;
 
 }
-
-/*==================================================
-    QUICK ADD
-==================================================*/
-
-function openQuickAdd(code) {
-
-    quickAddBarcode.textContent = "#" + code;
-    quickAddForm.dataset.code = code;
-
-    quickAddName.value = "";
-    quickAddPrice.value = "";
-
-    quickAddOverlay.classList.remove("hidden");
-
-    setTimeout(() => quickAddName.focus(), 150);
-
-}
-
-function closeQuickAdd() {
-
-    quickAddOverlay.classList.add("hidden");
-    scanInput.focus();
-
-}
-
-quickAddForm.addEventListener("submit", async (e) => {
-
-    e.preventDefault();
-
-    const code = quickAddForm.dataset.code;
-    const name = quickAddName.value.trim();
-    const price = quickAddPrice.value.trim();
-
-    try {
-
-        const payload = await Inventory.addProduct({
-            code,
-            name,
-            cprice: price,
-            price,
-            aliases: ""
-        });
-
-        addToCart(payload);
-        closeQuickAdd();
-
-        showToast("Product added");
-        flashStatus(`✅ Added: ${payload.name}`, "ok");
-
-    }
-
-    catch (err) {
-        showToast(err.message);
-    }
-
-});
-
-closeQuickAddBtn.addEventListener("click", closeQuickAdd);
-
-quickAddOverlay.addEventListener("click", (e) => {
-    if (e.target === quickAddOverlay) {
-        closeQuickAdd();
-    }
-});
 
 /*==================================================
     CAMERA (back + front, temporary backup scanner)
@@ -472,11 +621,45 @@ completeSaleBtn.addEventListener("click", () => {
         return;
     }
 
+    openReceipt();
+
+});
+
+/*==================================================
+    RECEIPT (digital only)
+==================================================*/
+
+function openReceipt() {
+
     const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+    const now = new Date();
 
-    showToast(`Sale completed — ${Inventory.formatCurrency(total)}`);
+    receiptMeta.textContent = now.toLocaleString("en-PH", {
+        dateStyle: "medium",
+        timeStyle: "short"
+    });
 
-    if (navigator.vibrate) navigator.vibrate(80);
+    receiptItems.innerHTML = cart.map(item => `
+        <div class="receipt-line">
+            <span class="receipt-line-name">${Inventory.escapeHtml(item.name)}</span>
+            <span class="receipt-line-qty">x${item.qty}</span>
+            <span class="receipt-line-total">${Inventory.formatCurrency(item.price * item.qty)}</span>
+        </div>
+    `).join("");
+
+    receiptTotal.textContent = Inventory.formatCurrency(total);
+
+    receiptOverlay.classList.remove("hidden");
+
+}
+
+printReceiptBtn.addEventListener("click", () => {
+    window.print();
+});
+
+doneReceiptBtn.addEventListener("click", () => {
+
+    receiptOverlay.classList.add("hidden");
 
     cart = [];
     renderCart();
@@ -484,20 +667,42 @@ completeSaleBtn.addEventListener("click", () => {
 
 });
 
+closeReceiptBtn.addEventListener("click", () => {
+    receiptOverlay.classList.add("hidden");
+});
+
 /*==================================================
-    NAV
+    NAV — with exit protection while a sale
+    is in progress
 ==================================================*/
 
+function confirmExitIfNeeded() {
+
+    if (!cart.length) return true;
+
+    return confirm("You have items in the current sale. Are you sure you want to exit?");
+
+}
+
 backBtn.addEventListener("click", () => {
-    window.location.href = "index.html";
+    if (confirmExitIfNeeded()) window.location.href = "index.html";
 });
 
 goToScanBtn.addEventListener("click", () => {
-    window.location.href = "index.html";
+    if (confirmExitIfNeeded()) window.location.href = "index.html";
 });
 
 goToListBtn.addEventListener("click", () => {
-    window.location.href = "list.html";
+    if (confirmExitIfNeeded()) window.location.href = "list.html";
+});
+
+window.addEventListener("beforeunload", (e) => {
+
+    if (cart.length) {
+        e.preventDefault();
+        e.returnValue = "";
+    }
+
 });
 
 /*==================================================
@@ -511,8 +716,9 @@ document.addEventListener("click", (e) => {
     const tag = e.target.tagName;
     const isFormEl = tag === "INPUT" || tag === "BUTTON" || tag === "TEXTAREA";
     const insideSheet = e.target.closest(".sheet-overlay");
+    const insideNotFound = e.target.closest("#notFoundCard");
 
-    if (!isFormEl && !insideSheet) {
+    if (!isFormEl && !insideSheet && !insideNotFound) {
         scanInput.focus();
     }
 

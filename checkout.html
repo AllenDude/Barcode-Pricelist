@@ -49,6 +49,18 @@
 
     </section>
 
+    <!-- ========== NOT FOUND ========== -->
+    <section id="notFoundCard" class="card empty-state hidden">
+        <div class="empty-icon">❌</div>
+        <h3>Product not found</h3>
+        <p>This barcode isn't in your inventory yet.</p>
+        <div id="notFoundBarcode" class="barcode-chip" style="margin:10px auto;">#000000000000</div>
+        <div class="not-found-actions">
+            <button id="rescanBtn" class="btn btn-ghost">🔄 Rescan</button>
+            <button id="addProductBtn" class="btn btn-success btn-block">➕ Add Product</button>
+        </div>
+    </section>
+
     <!-- ========== CART ========== -->
     <section class="card cart-card">
 
@@ -95,34 +107,100 @@
     </button>
 </nav>
 
-<!-- ========== QUICK ADD SHEET ========== -->
-<div id="quickAddOverlay" class="sheet-overlay hidden">
+<!-- ========== ADD PRODUCT SHEET ========== -->
+<div id="addProductOverlay" class="sheet-overlay hidden">
     <div class="sheet">
         <div class="sheet-handle"></div>
         <div class="sheet-header">
-            <h3>Quick Add</h3>
-            <button class="sheet-close close-quick-add">&times;</button>
+            <h3>Add Product</h3>
+            <button class="sheet-close close-add-product">&times;</button>
         </div>
 
-        <p class="quick-add-hint">This barcode isn't in your inventory yet. Add the basics now and ring it up — you can fill in full details from Inventory later.</p>
+        <div id="addProductBarcode" class="barcode-chip" style="margin-bottom:14px;">#000000000000</div>
 
-        <div id="quickAddBarcode" class="barcode-chip" style="margin-bottom:14px;">#000000000000</div>
-
-        <form id="quickAddForm">
+        <form id="addProductForm">
 
             <div class="field">
                 <label>Product Name</label>
-                <input id="quickAddName" type="text" required>
+                <input id="addProductName" type="text" required>
             </div>
 
-            <div class="field">
-                <label>Sale Price (₱)</label>
-                <input id="quickAddPrice" type="number" step="0.01" required>
+            <div class="field-row">
+                <div class="field">
+                    <label>Cost Price (₱)</label>
+                    <input id="addProductCost" type="number" step="0.01" required>
+                </div>
+                <div class="field">
+                    <label>Sale Price (₱)</label>
+                    <input id="addProductPrice" type="number" step="0.01" required>
+                </div>
             </div>
 
             <button type="submit" class="btn btn-success btn-block" style="margin-top:6px;">➕ Add &amp; Ring Up</button>
 
         </form>
+    </div>
+</div>
+
+<!-- ========== EDIT CART ITEM SHEET ========== -->
+<div id="editCartItemOverlay" class="sheet-overlay hidden">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h3>Edit Product</h3>
+            <button class="sheet-close close-edit-cart-item">&times;</button>
+        </div>
+
+        <form id="editCartItemForm">
+            <input type="hidden" id="editCartItemCode">
+
+            <div class="field">
+                <label>Product Name</label>
+                <input id="editCartItemName" type="text" required>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label>Cost Price (₱)</label>
+                    <input id="editCartItemCost" type="number" step="0.01" required>
+                </div>
+                <div class="field">
+                    <label>Sale Price (₱)</label>
+                    <input id="editCartItemPrice" type="number" step="0.01" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top:6px;">💾 Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<!-- ========== RECEIPT SHEET ========== -->
+<div id="receiptOverlay" class="sheet-overlay hidden">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h3>Receipt</h3>
+            <button class="sheet-close close-receipt">&times;</button>
+        </div>
+
+        <div id="receiptContent" class="receipt">
+            <div class="receipt-store">MENDOZA'S STORE</div>
+            <div id="receiptMeta" class="receipt-meta"></div>
+            <div class="receipt-divider"></div>
+            <div id="receiptItems" class="receipt-items"></div>
+            <div class="receipt-divider"></div>
+            <div class="receipt-total-row">
+                <span>TOTAL</span>
+                <span id="receiptTotal">₱0.00</span>
+            </div>
+            <div class="receipt-footer">Thank you for your purchase!</div>
+        </div>
+
+        <div class="receipt-actions">
+            <button id="printReceiptBtn" class="btn btn-ghost">🖨️ Print</button>
+            <button id="doneReceiptBtn" class="btn btn-success btn-block">✅ Done</button>
+        </div>
     </div>
 </div>
 
