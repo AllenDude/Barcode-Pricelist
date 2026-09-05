@@ -24,6 +24,7 @@ const searchInput = document.getElementById("searchInput");
 const toggleCostBtn = document.getElementById("toggleCostListBtn");
 const backBtn = document.getElementById("closePageBtn");
 const goToScanBtn = document.getElementById("goToScanBtn");
+const goToCheckoutBtn = document.getElementById("goToCheckoutBtn");
 
 const editModal = document.getElementById("editModal");
 const editForm = document.getElementById("editForm");
@@ -528,6 +529,10 @@ backBtn.addEventListener("click", () => {
 
 goToScanBtn.addEventListener("click", () => {
     window.location.href = "index.html";
+});
+
+goToCheckoutBtn.addEventListener("click", () => {
+    window.location.href = "checkout.html";
 });
 
 closeModal.addEventListener("click", () => {

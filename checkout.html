@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Checkout</title>
+
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="scan.css">
+    <link rel="stylesheet" href="checkout.css">
+
+</head>
+<body>
+
+<!-- ========== TOP BAR ========== -->
+<header class="topbar">
+    <button id="closePageBtn" class="topbar-back" title="Back">←</button>
+    <div class="topbar-title">
+        <h1>🛒 Checkout</h1>
+        <span id="checkoutSummary">0 items • ₱0.00</span>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- ========== SCAN ZONE ========== -->
+    <section class="card checkout-scan-card">
+
+        <div class="search-bar">
+            <input id="scanInput" type="text" placeholder="Scan or enter barcode…" autocomplete="off" autofocus>
+            <button id="scanSearchBtn" class="icon-btn primary" title="Look up">🔍</button>
+        </div>
+
+        <div class="camera-toggle-row">
+            <button id="toggleBackCamBtn" class="camera-toggle-btn">
+                <span>📷</span> Back Cam
+            </button>
+            <button id="toggleFrontCamBtn" class="camera-toggle-btn">
+                <span>🤳</span> Front Cam
+            </button>
+        </div>
+
+        <div id="cameraFrame" class="scan-frame compact hidden">
+            <div id="cameraReader"></div>
+        </div>
+
+        <div id="scanStatus" class="scan-status hidden"></div>
+
+    </section>
+
+    <!-- ========== CART ========== -->
+    <section class="card cart-card">
+
+        <span class="section-label">🧾 Current Sale</span>
+
+        <div id="cartList" class="cart-list">
+            <div class="empty-cart">Cart is empty. Scan an item to begin.</div>
+        </div>
+
+    </section>
+
+    <!-- ========== TOTALS ========== -->
+    <section class="card totals-card">
+
+        <div class="totals-row">
+            <span>Items</span>
+            <span id="cartItemCount">0</span>
+        </div>
+
+        <div class="totals-row total-final">
+            <span>Total</span>
+            <span id="cartTotal">₱0.00</span>
+        </div>
+
+        <div class="checkout-actions">
+            <button id="clearCartBtn" class="btn btn-ghost" title="Clear cart">🗑 Clear</button>
+            <button id="completeSaleBtn" class="btn btn-success btn-block">✅ Complete Sale</button>
+        </div>
+
+    </section>
+
+</div>
+
+<!-- ========== BOTTOM NAV ========== -->
+<nav class="bottom-nav">
+    <button id="goToScanBtn" class="nav-tab">
+        <span class="nav-icon">📷</span> Scan
+    </button>
+    <button class="nav-tab active">
+        <span class="nav-icon">🛒</span> Checkout
+    </button>
+    <button id="goToListBtn" class="nav-tab">
+        <span class="nav-icon">📦</span> Inventory
+    </button>
+</nav>
+
+<!-- ========== QUICK ADD SHEET ========== -->
+<div id="quickAddOverlay" class="sheet-overlay hidden">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h3>Quick Add</h3>
+            <button class="sheet-close close-quick-add">&times;</button>
+        </div>
+
+        <p class="quick-add-hint">This barcode isn't in your inventory yet. Add the basics now and ring it up — you can fill in full details from Inventory later.</p>
+
+        <div id="quickAddBarcode" class="barcode-chip" style="margin-bottom:14px;">#000000000000</div>
+
+        <form id="quickAddForm">
+
+            <div class="field">
+                <label>Product Name</label>
+                <input id="quickAddName" type="text" required>
+            </div>
+
+            <div class="field">
+                <label>Sale Price (₱)</label>
+                <input id="quickAddPrice" type="number" step="0.01" required>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-block" style="margin-top:6px;">➕ Add &amp; Ring Up</button>
+
+        </form>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="common.js"></script>
+<script src="checkout.js"></script>
+
+</body>
+</html>

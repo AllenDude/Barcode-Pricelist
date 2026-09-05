@@ -71,6 +71,7 @@ const recentScansList = document.getElementById("recentScansList");
 
 // Nav
 const goToListBtn = document.getElementById("goToListBtn");
+const goToCheckoutBtn = document.getElementById("goToCheckoutBtn");
 
 // Toast
 const toastEl = document.getElementById("toast");
@@ -605,6 +606,10 @@ manualSearchInput.addEventListener("keypress", e => {
 
 goToListBtn.addEventListener("click", () => {
     window.location.href = "list.html";
+});
+
+goToCheckoutBtn.addEventListener("click", () => {
+    window.location.href = "checkout.html";
 });
 
 scanAliasBtn.addEventListener("click", () => {
